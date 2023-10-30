@@ -42,7 +42,7 @@ def task_prediction_lineplot_ecogvslfp() -> None:
     ALPHA = 0.05
     Y_LIMS = (-0.6, 4.5)
 
-    file_finder = pte.filetools.get_filefinder(datatype="any")
+    file_finder = pte.filetools.DefaultFinder()
 
     fig, axs = plt.subplots(3, 1, sharex=True, figsize=(2.3, 3.4), sharey=True)
     i = 0
@@ -76,7 +76,7 @@ def task_prediction_lineplot_ecogvslfp() -> None:
                 )
                 data_map[channel] = data
 
-            with open(file_finder.files[0], encoding="utf-8") as file:
+            with file_finder.files[0].open(mode="w", encoding="utf-8") as file:
                 pred_data = json.load(file)
             times = np.array(pred_data["times"])
 
@@ -121,7 +121,7 @@ def task_prediction_lineplot_ecogvslfp() -> None:
             axs[i].spines["bottom"].set_position(("outward", 3))
             legend = False
             i += 1
-    with open(cluster_path, "w", encoding="utf-8") as file:
+    with cluster_path.open("w", encoding="utf-8") as file:
         json.dump(clusters, file, indent=4)
     motor_intention.plotting_settings.save_fig(fig, outpath)
 

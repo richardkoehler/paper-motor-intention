@@ -67,7 +67,6 @@ def task_plot_accuracies_medoffvson() -> None:
         else:
             data = data_raw
             add_lines = None
-        outpath = PLOT_PATH / (f"{BASENAME}_{picks}.svg")
         fig = pte_decode.boxplot_results(
             data=data,
             x=x,
@@ -84,7 +83,7 @@ def task_plot_accuracies_medoffvson() -> None:
         figs.append((fig, outpath))
 
         fname_stats.unlink(missing_ok=True)
-        with open(fname_stats, "w", encoding="utf-8", newline="") as file:
+        with fname_stats.open("w", encoding="utf-8", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["description", "mean", "std", "statistic", "P"])
             cond_a, cond_b = Cond.OFF.value, Cond.ON.value

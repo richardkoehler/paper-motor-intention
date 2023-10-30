@@ -55,7 +55,7 @@ def task_plot_decoding_times_medoffvson() -> None:
         )
         .set_index("Subject")
     )
-    data_raw.loc[:, y].clip(upper=0.0, inplace=True)
+    data_raw = data_raw.loc[:, y].clip(upper=0.0)
 
     bottom_lims = []
     top_lims = []
@@ -85,7 +85,7 @@ def task_plot_decoding_times_medoffvson() -> None:
         figs.append((fig, outpath))
 
         fname_stats.unlink(missing_ok=True)
-        with open(fname_stats, "w", encoding="utf-8", newline="") as file:
+        with fname_stats.open("w", encoding="utf-8", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["description", "mean", "std", "statistic", "P"])
             cond_a, cond_b = Cond.OFF.value, Cond.ON.value

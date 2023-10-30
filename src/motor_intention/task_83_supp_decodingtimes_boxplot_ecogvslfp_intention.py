@@ -62,7 +62,7 @@ def plot_decoding_times_ecogvslfp(
             .set_index("Subject")
         )
 
-        data_raw.loc[:, "Time (s)"].clip(upper=0.0, inplace=True)
+        data_raw.loc[:, "Time (s)"] = data_raw.loc[:, "Time (s)"].clip(upper=0.0)
         data_raw["Channels"] = "STN-LFP" if channel == "dbs" else "ECOG"
 
         data_list.append(data_raw)
@@ -100,7 +100,7 @@ def plot_decoding_times_ecogvslfp(
         figs.append((fig, outpath))
 
         FNAME_STATS.unlink(missing_ok=True)
-        with open(FNAME_STATS, "w", encoding="utf-8", newline="") as file:
+        with FNAME_STATS.open("w", encoding="utf-8", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["description", "mean", "std", "statistic", "P"])
 

@@ -68,10 +68,8 @@ def task_plot_decodingtimes_medoffmedonstimon() -> None:
         elif med == "OFF" and stim == "OFF":
             data.loc[i, "Condition"] = Cond.OFF_THERAPY.value
         else:
-            raise ValueError(
-                "Unknown combination of medication and stimulation. Got:"
-                f"{med = }, {stim = }"
-            )
+            msg = f"Unknown combination of medication and stimulation. Got:{med = }, {stim = }"
+            raise ValueError(msg)
 
     figsize = (1.7, 1.3)
     fig = pte_decode.boxplot_all_conds(
@@ -110,7 +108,7 @@ def task_plot_decodingtimes_medoffmedonstimon() -> None:
     motor_intention.plotting_settings.save_fig(fig, FNAME_PLOT)
     FNAME_STATS.unlink(missing_ok=True)
 
-    with open(FNAME_STATS, "w", encoding="utf-8", newline="") as file:
+    with FNAME_STATS.open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["description", "mean", "std", "statistic", "P"])
         statistic = np.mean

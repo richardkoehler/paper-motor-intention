@@ -28,7 +28,7 @@ def task_plot_correlation_perf_time() -> None:
     PLOT_PATH = constants.PLOTS / "supplements" / "decode"
     PLOT_PATH.mkdir(parents=True, exist_ok=True)
 
-    STIM_PAIRED_SUBS = [sub.strip("sub-") for sub in constants.STIM_PAIRED.keys()]
+    STIM_PAIRED_SUBS = [sub.strip("sub-") for sub in constants.STIM_PAIRED]
 
     data = (
         pd.read_csv(INPUT_DIR / "accuracies.csv")
@@ -122,7 +122,7 @@ def task_plot_correlation_perf_time() -> None:
         # height=1.5,
         # ratio=6,
         color="black",
-        scatter_kws=dict(s=6),
+        scatter_kws={"s": 6},
     )
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)

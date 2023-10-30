@@ -1,7 +1,7 @@
 """Initialize settings for plotting."""
 from __future__ import annotations
 
-import os
+import pathlib
 import re
 from enum import Enum
 
@@ -141,26 +141,24 @@ def cortical_region(show: bool = False) -> None:
         plt.show(block=True)
 
 
-def save_fig(fig: figure.Figure, outpath: str | os.PathLike) -> None:
-    outpath = str(outpath)
-    fig.savefig(outpath)  # , bbox_inches="tight")
-    if outpath.endswith(".svg"):
-        with open(outpath, encoding="utf-8") as f:
+def save_fig(fig: figure.Figure, outpath: pathlib.Path) -> None:
+    fig.savefig(str(outpath))
+    if outpath.suffix == ".svg":
+        with outpath.open(mode="r", encoding="utf-8") as f:
             svg_text = f.read()
         patched_svg = patch_affinity_svg(svg_text)
-        with open(outpath, "w", encoding="utf-8") as f:
+        with outpath.open(mode="w", encoding="utf-8") as f:
             f.write(patched_svg)
 
 
 def patch_affinity_svg(svg_text: str) -> str:
     """Patch Matplotlib SVG so that it can be read by Affinity Designer."""
-    matches = [
-        x
-        for x in re.finditer(
+    matches = list(
+        re.finditer(
             'font:( [0-9][0-9]?[0-9]?[0-9]?)? ([0-9.]+)px ([^;"]+)[";]',
             svg_text,
         )
-    ]
+    )
     if not matches:
         return svg_text
     svg_pieces = [svg_text[: matches[0].start()]]

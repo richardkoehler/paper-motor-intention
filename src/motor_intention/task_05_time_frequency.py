@@ -18,7 +18,8 @@ def main() -> None:
 
     PATH_BAD_EPOCHS = constants.DATA / "bad_epochs"
     if not PATH_BAD_EPOCHS.is_dir():
-        raise ValueError(f"Directory not found: {PATH_BAD_EPOCHS}")
+        msg = f"Directory not found: {PATH_BAD_EPOCHS}"
+        raise ValueError(msg)
 
     KEYWORDS = None
     STIMULATION = None  # "On"  # "Off"

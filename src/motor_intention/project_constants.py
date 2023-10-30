@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 random_seed = 1
-np.random.seed(random_seed)
+np.random.seed(random_seed)  # noqa: NPY002
 random.seed(random_seed)
 
 

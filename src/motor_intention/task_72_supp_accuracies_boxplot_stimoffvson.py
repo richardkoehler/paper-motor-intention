@@ -50,7 +50,7 @@ def task_plot_accuracies_stimoffvson() -> None:
     bottom_lims = []
     top_lims = []
     figs = []
-    for picks, outpath, fname_stats in zip(
+    for picks, fname_plot, fname_stats in zip(
         SUBJECT_PICKS, FNAMES_PLOT, FNAMES_STATS, strict=True
     ):
         if picks == "paired":
@@ -66,7 +66,6 @@ def task_plot_accuracies_stimoffvson() -> None:
         else:
             data = data_raw
             add_lines = None
-        outpath = PLOT_PATH / (f"{BASENAME}_{picks}.svg")
         fig = pte_decode.boxplot_results(
             data=data,
             x=x,
@@ -80,10 +79,10 @@ def task_plot_accuracies_stimoffvson() -> None:
         bottom, top = fig.axes[0].get_ylim()
         bottom_lims.append(bottom)
         top_lims.append(top)
-        figs.append((fig, outpath))
+        figs.append((fig, fname_plot))
 
         fname_stats.unlink(missing_ok=True)
-        with open(fname_stats, "w", encoding="utf-8", newline="") as file:
+        with fname_stats.open("w", encoding="utf-8", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["description", "mean", "std", "statistic", "P"])
             cond_a, cond_b = Cond.OFF.value, Cond.ON.value
@@ -123,7 +122,7 @@ def task_plot_accuracies_stimoffvson() -> None:
     top_lim = max(top_lims)
     print("xlims:", bottom_lim, top_lim)
 
-    for fig, outpath in figs:
+    for fig, fname_plot in figs:
         ax = fig.axes[0]
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
@@ -135,7 +134,7 @@ def task_plot_accuracies_stimoffvson() -> None:
         ax.set_xticklabels(ax.get_xticklabels(), weight="bold", rotation=30)
         ax.xaxis.set_tick_params(length=0)
         ax.set_xlabel("")
-        motor_intention.plotting_settings.save_fig(fig, outpath)
+        motor_intention.plotting_settings.save_fig(fig, fname_plot)
 
 
 if __name__ == "__main__":

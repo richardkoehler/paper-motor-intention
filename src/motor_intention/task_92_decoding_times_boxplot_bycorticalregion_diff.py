@@ -111,7 +111,7 @@ def task_plot_decoding_times_bycorticalregion() -> None:
     plt.show(block=True)
     fname_stats.unlink(missing_ok=True)
 
-    with open(fname_stats, "w", encoding="utf-8", newline="") as file:
+    with fname_stats.open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["description", "mean", "std", "statistic", "P"])
         statistic = np.mean

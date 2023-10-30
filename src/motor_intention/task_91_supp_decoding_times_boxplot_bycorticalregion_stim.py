@@ -118,7 +118,7 @@ def task_plot_decoding_times_bycorticalregion() -> None:
         motor_intention.plotting_settings.save_fig(fig, fname_plot)
         fname_stats.unlink(missing_ok=True)
 
-        with open(fname_stats, "w", encoding="utf-8", newline="") as file:
+        with fname_stats.open("w", encoding="utf-8", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["description", "mean", "std", "statistic", "P"])
             for cond in Cond:

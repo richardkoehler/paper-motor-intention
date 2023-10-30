@@ -55,7 +55,7 @@ def task_plot_accuracies_medoffvson() -> None:
                 "Channel": "Channels",
             }
         )
-        data_raw.loc[:, y].clip(upper=0.0, inplace=True)
+        data_raw = data_raw.loc[:, y].clip(upper=0.0)
         if stimulation == "On":
             data_raw = data_raw.query("Stimulation == 'ON' and Medication == 'OFF'")
         data_list.append(data_raw)
@@ -69,10 +69,8 @@ def task_plot_accuracies_medoffvson() -> None:
         elif med == "OFF" and stim == "OFF":
             data.loc[i, "Condition"] = Cond.OFF_THERAPY.value
         else:
-            raise ValueError(
-                "Unknown combination of medication and stimulation. Got:"
-                f"{med = }, {stim = }"
-            )
+            msg = f"Unknown combination of medication and stimulation. Got:{med = }, {stim = }"
+            raise ValueError(msg)
 
     figsize = (1.7, 1.3)
     fig = pte_decode.boxplot_all_conds(
@@ -101,7 +99,7 @@ def task_plot_accuracies_medoffvson() -> None:
     motor_intention.plotting_settings.save_fig(fig, FNAME_PLOT)
     FNAME_STATS.unlink(missing_ok=True)
 
-    with open(FNAME_STATS, "w", encoding="utf-8", newline="") as file:
+    with FNAME_STATS.open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["description", "mean", "std", "statistic", "P"])
         statistic = np.mean

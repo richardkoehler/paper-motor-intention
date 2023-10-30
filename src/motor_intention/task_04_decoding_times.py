@@ -31,15 +31,9 @@ def calculate_decoding_times(
     PIPELINE = f"stim_{stimulation.lower()}"
     if channels_used == "single":
         PIPELINE = f"{PIPELINE}_single_chs"
-    if stimulation == "Off":
-        medication = None
-    else:
-        medication = "Off"
+    medication = None if stimulation == "Off" else "Off"
 
-    if channels_used == "all":
-        channel_types = ("dbs", "ecog")
-    else:
-        channel_types = ("ecog",)
+    channel_types = ("dbs", "ecog") if channels_used == "all" else ("ecog",)
 
     N_JOBS = -1
 
@@ -64,7 +58,7 @@ def calculate_decoding_times(
             return default_value, trials_used
         return timepoint, trials_used
 
-    file_finder = pte.filetools.get_filefinder(datatype="any")
+    file_finder = pte.filetools.DefaultFinder(datatype="any")
     start = time.time()
     for channel in channel_types:
         INPUT_PATH = constants.DERIVATIVES / "decode" / PIPELINE / channel
@@ -93,21 +87,21 @@ def calculate_decoding_times(
         timepoints = []
         trials_used = []
 
-        for sample in data["Predictions"].values:
+        for sample in data["Predictions"].to_numpy():
             samples_used = sample[..., TIME_SLICE]
 
-            kwargs = dict(
-                default_value=TIMES_USED[-1],
-                data=samples_used,
-                times=TIMES_USED,
-                threshold=THRESHOLD,
-                n_perm=N_PERM,
-                alpha=ALPHA,
-                correction_method=CORRECTION_METHOD,
-                min_cluster_size=2,
-                resample_trials=RESAMPLE_TRIALS,
-                verbose=False,
-            )
+            kwargs = {
+                "default_value": TIMES_USED[-1],
+                "data": samples_used,
+                "times": TIMES_USED,
+                "threshold": THRESHOLD,
+                "n_perm": N_PERM,
+                "alpha": ALPHA,
+                "correction_method": CORRECTION_METHOD,
+                "min_cluster_size": 2,
+                "resample_trials": RESAMPLE_TRIALS,
+                "verbose": False,
+            }
             if N_JOBS == 1 or N_ITERATIONS == 1:
                 timepoints_singlesub = []
                 for _ in range(N_ITERATIONS):
@@ -123,7 +117,7 @@ def calculate_decoding_times(
                 ).mean(axis=0)
             print(f"{timepoint_avg = :.2f}")
             timepoints.append(timepoint_avg)
-            trials_used.append(int(trials))  # type: ignore
+            trials_used.append(int(trials))  # type: ignore  # noqa: PGH003
 
         data["Earliest Timepoint"] = timepoints
         data["trials_used"] = trials_used
@@ -138,46 +132,56 @@ def calculate_decoding_times(
 
 
 def task_decoding_times_stimoff(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: INPATH_STIMOFF / ch for ch in ("ecog", "dbs")
-    },
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: OUTPATH_STIMOFF / ch / "decodingtimes.csv" for ch in ("ecog", "dbs")
-    },
+    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: OUTPATH_STIMOFF / ch / "decodingtimes.csv" for ch in ("ecog", "dbs")
+        }
+    if in_paths is None:
+        in_paths = {ch: INPATH_STIMOFF / ch for ch in ("ecog", "dbs")}
     calculate_decoding_times(stimulation="Off")
 
 
 def task_decoding_times_stimon(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: INPATH_STIMON / ch for ch in ("ecog", "dbs")
-    },
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: OUTPATH_STIMON / ch / "decodingtimes.csv" for ch in ("ecog", "dbs")
-    },
+    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: OUTPATH_STIMON / ch / "decodingtimes.csv" for ch in ("ecog", "dbs")
+        }
+    if in_paths is None:
+        in_paths = {ch: INPATH_STIMON / ch for ch in ("ecog", "dbs")}
     calculate_decoding_times(stimulation="On")
 
 
 def task_decoding_times_single_ch(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: INPATH_SINGLE_STIMOFF / ch for ch in ("ecog", "dbs")
-    },
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: OUTPATH_SINGLE_STIMOFF / ch / "decodingtimes.csv" for ch in ("ecog", "dbs")
-    },
+    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: OUTPATH_SINGLE_STIMOFF / ch / "decodingtimes.csv"
+            for ch in ("ecog", "dbs")
+        }
+    if in_paths is None:
+        in_paths = {ch: INPATH_SINGLE_STIMOFF / ch for ch in ("ecog", "dbs")}
     calculate_decoding_times(stimulation="Off", channels_used="single")
 
 
 def task_decoding_times_single_ch_stimon(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: INPATH_SINGLE_STIMON / ch for ch in ("ecog", "dbs")
-    },
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: OUTPATH_SINGLE_STIMON / ch / "decodingtimes.csv" for ch in ("ecog", "dbs")
-    },
+    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: OUTPATH_SINGLE_STIMON / ch / "decodingtimes.csv"
+            for ch in ("ecog", "dbs")
+        }
+    if in_paths is None:
+        in_paths = {ch: INPATH_SINGLE_STIMON / ch for ch in ("ecog", "dbs")}
     calculate_decoding_times(stimulation="On", channels_used="single")
 
 

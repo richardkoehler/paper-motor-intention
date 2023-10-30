@@ -23,9 +23,9 @@ def _get_events(raw: mne.io.Raw, event_ids: dict) -> list:
     event_list = []
     for key, value in event_ids.items():
         event_list.append(
-            mne.events_from_annotations(raw=raw, event_id={key: value})[  # type: ignore
-                0
-            ][..., 0]
+            mne.events_from_annotations(raw=raw, event_id={key: value})[0][  # type: ignore  # noqa: PGH003
+                ..., 0
+            ]
         )
     return event_list
 
@@ -37,9 +37,7 @@ def task_write_trial_numbers(
 ) -> None:
     """Main function of this script."""
 
-    file_finder = pte.filetools.get_filefinder(
-        datatype="bids", hemispheres=constants.ECOG_HEMISPHERES
-    )
+    file_finder = pte.filetools.BIDSFinder(hemispheres=constants.ECOG_HEMISPHERES)
     file_finder.find_files(
         directory=in_path,
         extensions=".vhdr",
@@ -83,7 +81,7 @@ def task_write_trial_numbers(
     )
     trials.to_csv(outpath_trials, index=False, na_rep="n/a")
     FNAME_STATS.unlink(missing_ok=True)
-    with open(outpath_stats, "w", encoding="utf-8", newline="") as file:
+    with outpath_stats.open(mode="w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["description", "mean", "std"])
         writer.writerow(

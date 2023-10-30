@@ -53,9 +53,7 @@ def compute_rp_stn(stimulation: Literal["Off", "On"], show_plots: bool = False) 
     BASELINE = (-3, -2)
 
     # Initialize filefinder instance
-    file_finder = pte.filetools.get_filefinder(
-        datatype="bids", hemispheres=constants.ECOG_HEMISPHERES
-    )
+    file_finder = pte.filetools.BIDSFinder(hemispheres=constants.ECOG_HEMISPHERES)
     file_finder.find_files(
         directory=constants.RAWDATA_ORIG,
         extensions=[".vhdr"],
@@ -79,7 +77,9 @@ def compute_rp_stn(stimulation: Literal["Off", "On"], show_plots: bool = False) 
         )
         sub, med, stim = pte.filetools.sub_med_stim_from_fname(bids_path)
         side = "L" if constants.ECOG_HEMISPHERES[sub] == "R" else "R"
-        with open(bids_path.copy().update(extension=".json"), encoding="utf-8") as file:
+        with bids_path.copy().update(extension=".json").fpath.open(
+            mode="w", encoding="utf-8"
+        ) as file:
             sidecar = json.load(file)
         ref_orig = sidecar["iEEGReference"]
 
@@ -140,17 +140,14 @@ def compute_rp_stn(stimulation: Literal["Off", "On"], show_plots: bool = False) 
             )
             epochs = epochs.drop(indices=bad_indices)
         else:
-            raise ValueError("No bad epochs file found.")
+            msg = "No bad epochs file found."
+            raise ValueError(msg)
 
         reject_criteria = {"dbs": 1e-3}  # 1 mV
-        epochs.load_data().crop(tmin=-3.0, tmax=2.0).drop_bad(reject=reject_criteria)  # type: ignore
-        evoked_all: mne.Evoked = (
-            epochs.copy()
-            # .crop(tmin=-3.0, tmax=0.0)
-            .average(by_event_type=False)
-        )
+        epochs.load_data().crop(tmin=-3.0, tmax=2.0).drop_bad(reject=reject_criteria)
+        evoked_all: mne.Evoked = epochs.copy().average(by_event_type=False)
         evoked_all.save(
-            OUT_DIR_SINGLE_SUBS / f"{basename}_proc-dbsall-ave.fif.gz",  # type: ignore
+            OUT_DIR_SINGLE_SUBS / f"{basename}_proc-dbsall-ave.fif.gz",
             overwrite=True,
         )
         if times is None:

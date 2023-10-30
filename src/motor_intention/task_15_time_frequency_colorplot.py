@@ -57,10 +57,7 @@ def task_plot_time_frequency(show_plots: bool = False) -> None:
         ch_str = "motorcortex" if channel == "ecog" else "dbs"
         power_norm = []
         for sub, power in powers.items():
-            if channel == "ecog":
-                ch_pick = coords.loc[sub, "Channel"]
-            else:
-                ch_pick = "dbs"
+            ch_pick = coords.loc[sub, "Channel"] if channel == "ecog" else "dbs"
             power_pick = power.copy().pick(ch_pick)
             power_norm.append(power_pick.data.mean(axis=0))
         power_norm = np.stack(power_norm)

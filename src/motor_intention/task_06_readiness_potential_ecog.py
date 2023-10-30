@@ -64,9 +64,7 @@ def compute_rp_ecog(
     )
 
     # Initialize filefinder instance
-    file_finder = pte.filetools.get_filefinder(
-        datatype="bids", hemispheres=constants.ECOG_HEMISPHERES
-    )
+    file_finder = pte.filetools.BIDSFinder(hemispheres=constants.ECOG_HEMISPHERES)
     file_finder.find_files(
         directory=constants.RAWDATA_ORIG,
         extensions=[".vhdr"],
@@ -166,11 +164,8 @@ def compute_rp_ecog(
         }
         OUT_DIR_SINGLE = OUT_DIR / "data_motorcortex" / basename
         OUT_DIR_SINGLE.mkdir(exist_ok=True, parents=True)
-        with open(
-            OUT_DIR_SINGLE / f"{basename}_RPTimelocked.json",
-            "w",
-            encoding="utf-8",
-        ) as file:
+        out_file = OUT_DIR_SINGLE / f"{basename}_RPTimelocked.json"
+        with out_file.open("w", encoding="utf-8") as file:
             json.dump(res_single, file)
         results.append(
             (

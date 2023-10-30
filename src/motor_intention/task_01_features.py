@@ -33,9 +33,7 @@ def compute_features(
 
     N_JOBS = -1
 
-    file_finder = pte.filetools.get_filefinder(
-        datatype="bids", hemispheres=constants.ECOG_HEMISPHERES
-    )
+    file_finder = pte.filetools.BIDSFinder(hemispheres=constants.ECOG_HEMISPHERES)
     file_finder.find_files(
         directory=in_path,
         hemisphere="contralateral",
@@ -61,7 +59,7 @@ def compute_features(
         )
     else:
         for file in files:
-            run(fname=file, **kwargs)  # type: ignore
+            run(fname=file, **kwargs)
 
     print(f"Time elapsed: {((time.perf_counter()-start)/60):.0f} minutes")
 

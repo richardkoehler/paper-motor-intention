@@ -49,10 +49,7 @@ def plot_features(SUBJECT: str = "sub-EL014") -> None:
         if not feature.startswith(coords.loc[SUBJECT, "Channel"]):
             continue
         f_band = feature.split("_fft_")[1]
-        if f_band == "high frequency activity":
-            f_band = "HFA"
-        else:
-            f_band = f_band.capitalize()
+        f_band = "HFA" if f_band == "high frequency activity" else f_band.capitalize()
         f_bands.append(f_band)
         features.append(data)
     f_bands = f_bands[::-1]

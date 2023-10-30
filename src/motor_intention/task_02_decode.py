@@ -17,10 +17,7 @@ def decode(
     in_path: pathlib.Path,
     out_paths: dict[str, pathlib.Path],
 ) -> None:
-    if channels_used == "all":
-        channel_types = ("ecog", "dbs")
-    else:
-        channel_types = ("ecog",)
+    channel_types = ("ecog", "dbs") if channels_used == "all" else ("ecog",)
 
     n_jobs = -1
 
@@ -34,7 +31,6 @@ def decode(
     scoring = "balanced_accuracy"
     prediction_mode = "decision_function"
     hemispheres_used = "contralat"
-    channels_used = channels_used
     n_splits_outer = "max"
     n_splits_inner = 10
     feature_keywords = [
@@ -68,12 +64,13 @@ def decode(
 
     PATH_BAD_EPOCHS = constants.DATA / "bad_epochs"
     if not PATH_BAD_EPOCHS.is_dir():
-        raise ValueError(f"Directory not found: {PATH_BAD_EPOCHS}")
+        msg = f"Directory not found: {PATH_BAD_EPOCHS}"
+        raise ValueError(msg)
 
     start = time.perf_counter()
 
     # Initialize filefinder instance
-    file_finder = pte.filetools.get_filefinder(datatype="any")
+    file_finder = pte.filetools.DefaultFinder()
     file_finder.find_files(
         directory=in_path,
         extensions="FEATURES.csv",
@@ -110,7 +107,7 @@ def decode(
                             "decode",
                         ],
                         feature_root=in_path,
-                        filepaths_features=feature_files,  # type: ignore
+                        filepaths_features=feature_files,
                         n_jobs=n_jobs,
                         classifier=classifier,
                         label_channels=label_channels,
@@ -144,10 +141,13 @@ def decode(
 
 def task_decode_stimoff(
     in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_off",
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: constants.DERIVATIVES / "decode" / "stim_off" / ch for ch in ("dbs", "ecog")
-    },
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: constants.DERIVATIVES / "decode" / "stim_off" / ch
+            for ch in ("dbs", "ecog")
+        }
     decode(
         channels_used="all",
         in_path=in_path,
@@ -157,10 +157,13 @@ def task_decode_stimoff(
 
 def task_decode_stimon(
     in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_on",
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: constants.DERIVATIVES / "decode" / "stim_on" / ch for ch in ("dbs", "ecog")
-    },
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: constants.DERIVATIVES / "decode" / "stim_on" / ch
+            for ch in ("dbs", "ecog")
+        }
     decode(
         channels_used="all",
         in_path=in_path,
@@ -170,13 +173,14 @@ def task_decode_stimon(
 
 def task_decode_single_ch_stimoff(
     in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_off",
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: constants.DERIVATIVES / "decode" / "stim_off_single_chs" / ch
-        for ch in ("ecog",)
-    },
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: constants.DERIVATIVES / "decode" / "stim_off_single_chs" / ch
+            for ch in ("ecog",)
+        }
     decode(
-        stimulation="Off",
         channels_used="single",
         in_path=in_path,
         out_paths=out_paths,
@@ -185,13 +189,14 @@ def task_decode_single_ch_stimoff(
 
 def task_decode_single_ch_stimon(
     in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_on",
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: constants.DERIVATIVES / "decode" / "stim_on_single_chs" / ch
-        for ch in ("ecog",)
-    },
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: constants.DERIVATIVES / "decode" / "stim_on_single_chs" / ch
+            for ch in ("ecog",)
+        }
     decode(
-        stimulation="On",
         channels_used="single",
         in_path=in_path,
         out_paths=out_paths,

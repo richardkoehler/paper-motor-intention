@@ -57,10 +57,8 @@ def rp_lineplot(
 
         if stimulation == "Off":
             COND = "Medication"
-            COND_ABB = "Med."
         else:
             COND = "Stimulation"
-            COND_ABB = "Stim."
             rp = rp.query("Medication == 'OFF'")
         rp = rp.set_index(["Subject", "Medication", "Stimulation", "Channels"])
         times = rp.columns.to_numpy(dtype=float)

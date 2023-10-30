@@ -94,7 +94,7 @@ def plot_accuracies_ecogvslfp(
         figs.append((fig, outpath))
 
         FNAME_STATS.unlink(missing_ok=True)
-        with open(FNAME_STATS, "w", encoding="utf-8", newline="") as file:
+        with FNAME_STATS.open("w", encoding="utf-8", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(["description", "mean", "std", "statistic", "P"])
 

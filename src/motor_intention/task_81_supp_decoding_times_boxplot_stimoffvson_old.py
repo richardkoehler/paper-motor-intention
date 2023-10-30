@@ -41,7 +41,7 @@ def task_plot_decoding_times_stimoffvson() -> None:
         .query("Medication == 'OFF'")
         .set_index("Subject")
     )
-    data.loc[:, "Time (s)"].clip(upper=0.0, inplace=True)
+    data.loc[:, "Time (s)"] = data.loc[:, "Time (s)"].clip(upper=0.0)
 
     bottom_lims = []
     top_lims = []

@@ -42,26 +42,36 @@ def write_accuracies(
 
 
 def task_write_accuracies_stimoff(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: constants.DERIVATIVES / "decode" / "stim_off" / ch for ch in ("ecog", "dbs")
-    },
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: constants.RESULTS / "decode" / "stim_off" / ch / "accuracies.csv"
-        for ch in ("ecog", "dbs")
-    },
+    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: constants.RESULTS / "decode" / "stim_off" / ch / "accuracies.csv"
+            for ch in ("ecog", "dbs")
+        }
+    if in_paths is None:
+        in_paths = {
+            ch: constants.DERIVATIVES / "decode" / "stim_off" / ch
+            for ch in ("ecog", "dbs")
+        }
     write_accuracies(in_paths=in_paths, out_paths=out_paths)
 
 
 def task_write_accuracies_stimon(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: constants.DERIVATIVES / "decode" / "stim_on" / ch for ch in ("ecog", "dbs")
-    },
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] = {
-        ch: constants.RESULTS / "decode" / "stim_on" / ch / "accuracies.csv"
-        for ch in ("ecog", "dbs")
-    },
+    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
+    if out_paths is None:
+        out_paths = {
+            ch: constants.RESULTS / "decode" / "stim_on" / ch / "accuracies.csv"
+            for ch in ("ecog", "dbs")
+        }
+    if in_paths is None:
+        in_paths = {
+            ch: constants.DERIVATIVES / "decode" / "stim_on" / ch
+            for ch in ("ecog", "dbs")
+        }
     write_accuracies(in_paths=in_paths, out_paths=out_paths)
 
 

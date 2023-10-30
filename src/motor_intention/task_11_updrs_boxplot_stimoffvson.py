@@ -82,7 +82,7 @@ def task_plot_updrs_medoffvson() -> None:
     motor_intention.plotting_settings.save_fig(fig, outpath)
 
     FNAME_STATS.unlink(missing_ok=True)
-    with open(FNAME_STATS, "w", encoding="utf-8", newline="") as file:
+    with FNAME_STATS.open(mode="w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["description", "mean", "std", "statistic", "P"])
 

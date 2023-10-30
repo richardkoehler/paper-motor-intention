@@ -8,7 +8,7 @@ import nox
 
 DIR = Path(__file__).parent.resolve()
 
-nox.options.sessions = ["lint", "tests"]
+nox.options.sessions = ["pylint", "lint", "tests"]
 
 
 @nox.session
@@ -18,8 +18,23 @@ def lint(session: nox.Session) -> None:
     """
     session.install("pre-commit")
     session.run(
-        "pre-commit", "run", "--all-files", "--show-diff-on-failure", *session.posargs
+        "pre-commit",
+        "run",
+        "--all-files",
+        "--show-diff-on-failure",
+        *session.posargs,
     )
+
+
+@nox.session
+def pylint(session: nox.Session) -> None:
+    """
+    Run PyLint.
+    """
+    # This needs to be installed into the package environment, and is slower
+    # than a pre-commit check
+    session.install(".", "pylint")
+    session.run("pylint", "src", *session.posargs)
 
 
 @nox.session
@@ -40,7 +55,10 @@ def docs(session: nox.Session) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--serve", action="store_true", help="Serve after building")
     parser.add_argument(
-        "-b", dest="builder", default="html", help="Build target (default: html)"
+        "-b",
+        dest="builder",
+        default="html",
+        help="Build target (default: html)",
     )
     args, posargs = parser.parse_known_args(session.posargs)
 
@@ -54,7 +72,12 @@ def docs(session: nox.Session) -> None:
 
     if args.builder == "linkcheck":
         session.run(
-            "sphinx-build", "-b", "linkcheck", ".", "_build/linkcheck", *posargs
+            "sphinx-build",
+            "-b",
+            "linkcheck",
+            ".",
+            "_build/linkcheck",
+            *posargs,
         )
         return
 
