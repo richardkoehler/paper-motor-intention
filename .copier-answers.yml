@@ -1,0 +1,13 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: 2023.10.27
+_src_path: gh:scientific-python/cookie
+backend: hatch
+email: koehler.richard@charite.de
+full_name: Richard M. Köhler
+license: MIT
+org: richardkoehler
+project_name: paper-motor-intention
+project_short_description: Code used for paper investigating motor intention in Parkinson's
+    disease patients.
+url: https://github.com/richardkoehler/paper-motor-intention
+vcs: true
