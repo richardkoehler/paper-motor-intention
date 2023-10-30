@@ -5,5 +5,5 @@ dependencies:
   - pip
   - python=3.10.9
   - pip:
-    - -r requirements.txt
-    - -r requirements_dev.txt
+      - -r requirements.txt
+      - -r requirements_dev.txt

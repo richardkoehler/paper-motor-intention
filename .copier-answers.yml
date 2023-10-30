@@ -7,7 +7,8 @@ full_name: Richard M. Köhler
 license: MIT
 org: richardkoehler
 project_name: paper-motor-intention
-project_short_description: Code used for paper investigating motor intention in Parkinson's
-    disease patients.
+project_short_description:
+  Code used for paper investigating motor intention in Parkinson's disease
+  patients.
 url: https://github.com/richardkoehler/paper-motor-intention
 vcs: true

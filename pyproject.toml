@@ -94,7 +94,7 @@ disallow_untyped_defs = true
 module = "motor_intention.*"
 
 [tool.ruff]
-src = ["src/motor_intention"]
+src = ["src"]
 
 [tool.ruff.lint]
 extend-select = [
