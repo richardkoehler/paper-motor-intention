@@ -1,10 +1,7 @@
--e C://Users//rkoehler//GitHub//mne-python
+-e mne@https://github.com/richardkoehler/mne-python
 -e py_neuromodulation@git+https://github.com/richardkoehler/py_neuromodulation/tree/paper_motor_intenion
--e C://Users//rkoehler//GitHub//pte-decode
--e C://Users//rkoehler//GitHub//pte-stats
--e C://Users//rkoehler//GitHub//pte
+-e pte-decode@https://github.com/richardkoehler/pte-decode
+-e pte-stats@https://github.com/richardkoehler/pte-stats
+-e pte@https://github.com/richardkoehler/pte
 -e .
 pytask
-# pytest
-# pte-stats == 0.2.0
-# pte == 0.1.0
