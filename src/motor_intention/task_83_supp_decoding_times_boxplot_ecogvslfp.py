@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
 from matplotlib import pyplot as plt
 
@@ -17,9 +17,38 @@ import motor_intention.project_constants as constants
 import motor_intention.stats_helpers
 
 DECODE = "decode"
+CHANNEL_TYPES = ("ecog", "dbs")
+STIM = ("Off", "On")
+IN_PATHS = {
+    stim: {
+        ch_type: constants.RESULTS
+        / DECODE
+        / f"stim_{stim.lower()}"
+        / ch_type
+        / "decodingtimes.csv"
+        for ch_type in CHANNEL_TYPES
+    }
+    for stim in STIM
+}
+
+
 PLOT_PATH = constants.PLOTS / "supplements" / DECODE
 PLOT_PATH.mkdir(parents=True, exist_ok=True)
 BASENAME = "decodingtimes_boxplot_ecogvslfp"
+
+
+def task_plot_decodingtimes_stim_off(
+    in_paths: dict[Literal["ecog", "dbs"], Path] = IN_PATHS["Off"],
+    stimulation: Literal["Off", "On"] = "Off",
+) -> None:
+    plot_decoding_times_ecogvslfp(stimulation=stimulation, in_paths=in_paths)
+
+
+def task_plot_decodingtimes_stim_on(
+    in_paths: dict[Literal["ecog", "dbs"], Path] = IN_PATHS["On"],
+    stimulation: Literal["Off", "On"] = "On",
+) -> None:
+    plot_decoding_times_ecogvslfp(stimulation=stimulation, in_paths=in_paths)
 
 
 class Cond(Enum):
@@ -29,14 +58,11 @@ class Cond(Enum):
 
 def plot_decoding_times_ecogvslfp(
     stimulation: Literal["Off", "On"],
+    in_paths: dict[Literal["ecog", "dbs"], Path],
 ) -> None:
     """Main function of this script"""
     stim = stimulation.upper()
-    PIPELINE = f"stim_{stimulation.lower()}"
-    channel_types = ("dbs", "ecog")
-
     med_conds = ("OFF", "ON") if stimulation == "Off" else ("OFF",)
-    channel_types = ("dbs", "ecog")
     x = "Channels"
     y = "Time [s]"
 
@@ -48,11 +74,9 @@ def plot_decoding_times_ecogvslfp(
     }
 
     data_list = []
-    for channel in channel_types:
-        INPUT_ROOT = constants.RESULTS / DECODE / PIPELINE / channel
-
+    for ch_type, in_path in in_paths.items():
         data_raw = (
-            pd.read_csv(INPUT_ROOT / "decodingtimes.csv")
+            pd.read_csv(in_path / "decodingtimes.csv")
             .rename(
                 columns={
                     "Earliest Timepoint": y,
@@ -63,7 +87,7 @@ def plot_decoding_times_ecogvslfp(
         )
 
         data_raw.loc[:, "Time (s)"] = data_raw.loc[:, "Time (s)"].clip(upper=0.0)
-        data_raw["Channels"] = "STN-LFP" if channel == "dbs" else "ECOG"
+        data_raw["Channels"] = "STN-LFP" if ch_type == "dbs" else "ECOG"
 
         data_list.append(data_raw)
 
@@ -154,44 +178,8 @@ def plot_decoding_times_ecogvslfp(
         motor_intention.plotting_settings.save_fig(fig, outpath)
 
 
-@pytask.mark.depends_on(
-    (
-        constants.RESULTS / DECODE / "stim_off" / "ecog" / "decodingtimes.csv",
-        constants.RESULTS / DECODE / "stim_off" / "dbs" / "decodingtimes.csv",
-    )
-)
-@pytask.mark.produces(
-    (
-        PLOT_PATH / f"{BASENAME}_stimoff_medoff.svg",
-        PLOT_PATH / f"{BASENAME}_stimoff_medon.svg",
-        PLOT_PATH / f"{BASENAME}_stimoff_medoff_stats.csv",
-        PLOT_PATH / f"{BASENAME}_stimoff_medon_stats.csv",
-    )
-)
-def task_plot_decodingtimes_stim_off() -> None:
-    plot_decoding_times_ecogvslfp(stimulation="Off")
-
-
-@pytask.mark.depends_on(
-    (
-        constants.RESULTS / DECODE / "stim_on" / "ecog" / "decodingtimes.csv",
-        constants.RESULTS / DECODE / "stim_on" / "dbs" / "decodingtimes.csv",
-    )
-)
-@pytask.mark.produces(
-    (
-        PLOT_PATH / f"{BASENAME}_stimon_medoff.svg",
-        PLOT_PATH / f"{BASENAME}_stimon_medon.svg",
-        PLOT_PATH / f"{BASENAME}_stimon_medoff_stats.csv",
-        PLOT_PATH / f"{BASENAME}_stimon_medon_stats.csv",
-    )
-)
-def task_plot_decodingtimes_stim_on() -> None:
-    plot_decoding_times_ecogvslfp(stimulation="On")
-
-
 if __name__ == "__main__":
     task_plot_decodingtimes_stim_off()
     plt.show()
     task_plot_decodingtimes_stim_on()
-    plt.show()
+    plt.show(block=True)

@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
 
 import motor_intention.plotting_settings
@@ -19,9 +19,9 @@ PLOT_PATH = constants.PLOTS / "supplements" / DECODE
 PLOT_PATH.mkdir(parents=True, exist_ok=True)
 
 CHANNEL = "ecog"
-TIMES = constants.RESULTS / "decode" / "stim_on" / CHANNEL / "decodingtimes.csv"
+IN_PATH = constants.RESULTS / "decode" / "stim_off" / CHANNEL / "decodingtimes.csv"
 BASENAME = f"decodingtimes_boxplot_{CHANNEL}_stimoffvson"
-SUBJECT_PICKS = ("paired",)  #  "all")
+SUBJECT_PICKS = ("paired",)
 FNAMES_PLOT = [PLOT_PATH / f"{BASENAME}_{picks}.svg" for picks in SUBJECT_PICKS]
 FNAMES_STATS = [PLOT_PATH / f"{BASENAME}_{picks}_stats.csv" for picks in SUBJECT_PICKS]
 
@@ -31,9 +31,7 @@ class Cond(Enum):
     ON = "ON"
 
 
-@pytask.mark.depends_on(TIMES)
-@pytask.mark.produces(*FNAMES_PLOT, *FNAMES_STATS)
-def task_plot_decoding_times_stimoffvson() -> None:
+def task_plot_decoding_times_stimoffvson(in_path: Path = IN_PATH) -> None:
     """Main function of this script"""
     motor_intention.plotting_settings.activate()
     motor_intention.plotting_settings.stimoffvson()
@@ -42,7 +40,7 @@ def task_plot_decoding_times_stimoffvson() -> None:
     y = "Time [s]"
     data_raw = (
         pd.read_csv(
-            TIMES,
+            in_path,
             dtype={"Subject": str},
         )
         .rename(

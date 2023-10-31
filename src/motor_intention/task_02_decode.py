@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import pathlib
 import time
+from collections.abc import Sequence
 from typing import Annotated, Literal
 
 import pte
@@ -11,13 +12,70 @@ from pytask import Product
 
 import motor_intention.project_constants as constants
 
+PATHS_STIM_OFF = tuple(
+    constants.DERIVATIVES / "decode" / "stim_off" / ch for ch in ("dbs", "ecog")
+)
+PATHS_STIM_ON = tuple(
+    constants.DERIVATIVES / "decode" / "stim_on" / ch for ch in ("dbs", "ecog")
+)
+PATHS_STIM_OFF_SINGLE_CHS = tuple(
+    constants.DERIVATIVES / "decode" / "stim_off_single_chs" / ch for ch in ("ecog",)
+)
+PATHS_STIM_ON_SINGLE_CHS = tuple(
+    constants.DERIVATIVES / "decode" / "stim_on_single_chs" / ch for ch in ("ecog",)
+)
+
+
+def task_decode_stimoff(
+    in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_off",
+    out_paths: Sequence[Annotated[pathlib.Path, Product]] = PATHS_STIM_OFF,
+) -> None:
+    decode(
+        channels_used="all",
+        in_path=in_path,
+        out_paths=out_paths,
+    )
+
+
+def task_decode_stimon(
+    in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_on",
+    out_paths: Sequence[Annotated[pathlib.Path, Product]] = PATHS_STIM_ON,
+) -> None:
+    decode(
+        channels_used="all",
+        in_path=in_path,
+        out_paths=out_paths,
+    )
+
+
+def task_decode_single_ch_stimoff(
+    in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_off",
+    out_paths: Sequence[Annotated[pathlib.Path, Product]] = PATHS_STIM_OFF_SINGLE_CHS,
+) -> None:
+    decode(
+        channels_used="single",
+        in_path=in_path,
+        out_paths=out_paths,
+    )
+
+
+def task_decode_single_ch_stimon(
+    in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_on",
+    out_paths: Sequence[Annotated[pathlib.Path, Product]] = PATHS_STIM_ON_SINGLE_CHS,
+) -> None:
+    decode(
+        channels_used="single",
+        in_path=in_path,
+        out_paths=out_paths,
+    )
+
 
 def decode(
     channels_used: Literal["all", "single"],
     in_path: pathlib.Path,
-    out_paths: dict[str, pathlib.Path],
+    out_paths: Sequence[pathlib.Path],
 ) -> None:
-    channel_types = ("ecog", "dbs") if channels_used == "all" else ("ecog",)
+    out_paths_map = {path.name: path for path in out_paths}
 
     n_jobs = -1
 
@@ -83,7 +141,7 @@ def decode(
     for CLASSIFIER in classifier_parameters:
         classifier, balancing, optimize = CLASSIFIER.values()
         for target_begin, target_end in targets:
-            for types_used in channel_types:
+            for types_used, out_path in out_paths_map.items():
                 for use_times in timepoint_features:
                     feature_normalization_mode = (
                         None if use_times == 1 else feature_normalization_mode
@@ -98,7 +156,6 @@ def decode(
                         types_used,
                         use_times,
                     )
-                    out_path = out_paths[types_used]
                     out_path.mkdir(exist_ok=True)
                     pte_decode.run_pipeline_multiproc(
                         pipeline_steps=[
@@ -137,70 +194,6 @@ def decode(
                     )
 
     print(f"Time elapsed: {(time.perf_counter()-start)/60:.2f} minutes")
-
-
-def task_decode_stimoff(
-    in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_off",
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-) -> None:
-    if out_paths is None:
-        out_paths = {
-            ch: constants.DERIVATIVES / "decode" / "stim_off" / ch
-            for ch in ("dbs", "ecog")
-        }
-    decode(
-        channels_used="all",
-        in_path=in_path,
-        out_paths=out_paths,
-    )
-
-
-def task_decode_stimon(
-    in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_on",
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-) -> None:
-    if out_paths is None:
-        out_paths = {
-            ch: constants.DERIVATIVES / "decode" / "stim_on" / ch
-            for ch in ("dbs", "ecog")
-        }
-    decode(
-        channels_used="all",
-        in_path=in_path,
-        out_paths=out_paths,
-    )
-
-
-def task_decode_single_ch_stimoff(
-    in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_off",
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-) -> None:
-    if out_paths is None:
-        out_paths = {
-            ch: constants.DERIVATIVES / "decode" / "stim_off_single_chs" / ch
-            for ch in ("ecog",)
-        }
-    decode(
-        channels_used="single",
-        in_path=in_path,
-        out_paths=out_paths,
-    )
-
-
-def task_decode_single_ch_stimon(
-    in_path: pathlib.Path = constants.DERIVATIVES / "features" / "stim_on",
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-) -> None:
-    if out_paths is None:
-        out_paths = {
-            ch: constants.DERIVATIVES / "decode" / "stim_on_single_chs" / ch
-            for ch in ("ecog",)
-        }
-    decode(
-        channels_used="single",
-        in_path=in_path,
-        out_paths=out_paths,
-    )
 
 
 if __name__ == "__main__":

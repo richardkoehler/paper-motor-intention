@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
 from matplotlib import pyplot as plt
 
@@ -21,7 +21,7 @@ PLOT_PATH = constants.PLOTS / DECODE
 PLOT_PATH.mkdir(parents=True, exist_ok=True)
 
 CHANNEL = "ecog"
-TIMES = (
+IN_PATH = (
     constants.RESULTS
     / DECODE
     / f"stim_{STIMULATION}_single_chs"
@@ -40,12 +40,7 @@ class Cond(Enum):
     MOTOR = "Motor"
 
 
-@pytask.mark.depends_on(TIMES)
-@pytask.mark.produces(
-    [PLOT_PATH / (BASENAME + f"_med{med}.svg") for med in MEDICATION]
-    + [PLOT_PATH / (BASENAME + f"_med{med}_stats.csv") for med in MEDICATION]
-)
-def task_plot_decoding_times_bycorticalregion() -> None:
+def task_plot_decoding_times_bycorticalregion(in_path: Path = IN_PATH) -> None:
     """Main function of this script"""
     motor_intention.plotting_settings.activate()
 
@@ -57,7 +52,7 @@ def task_plot_decoding_times_bycorticalregion() -> None:
         .rename(columns={"name": "Channel", "region": x})
         .set_index(["Subject", "Channel"])
     )
-    times = pd.read_csv(TIMES, index_col=["Subject", "Channel"])
+    times = pd.read_csv(in_path, index_col=["Subject", "Channel"])
 
     data_list = []
     prefrontal_subs = set()
@@ -81,8 +76,6 @@ def task_plot_decoding_times_bycorticalregion() -> None:
         .set_index(["Subject", "Channel"])
     )
     data_raw[y] = data_raw[y].clip(upper=0.0)
-    # MED_PAIRED = [sub.strip("sub-") for sub in constants.MED_PAIRED]
-    # data_paired = data_raw.query(f"Subject in {MED_PAIRED}")
 
     motor_intention.plotting_settings.cortical_region()
     for med in MEDICATION:
@@ -173,88 +166,6 @@ def task_plot_decoding_times_bycorticalregion() -> None:
                         test.pvalue,
                     ]
                 )
-
-    # motor_intention.plotting_settings.medoffvson()
-    # region_picks = ["Parietal", "Sensory", "Motor"]
-    # # data_pick = data_paired.query(f"region in {region_picks}")
-    # # ymax = data_pick["Time [s]"].max() + 0.1
-    # # ymin = data_pick["Time [s]"].min() - 0.1
-
-    # bottom_lims = []
-    # top_lims = []
-    # figs = []
-    # for region in region_picks:
-    #     basename = (
-    #         f"decodingtimes_boxplot_{region.lower()}_medoffvson_paired.svg"
-    #     )
-    #     outpath = constants.PLOTS / basename
-    #     fig = pte_decode.boxplot_results(
-    #         data=data_paired.query(f"`{x}` == '{region}'"),
-    #         outpath=None,
-    #         x="Medication",
-    #         y="Time [s]",
-    #         hue=None,
-    #         order=["OFF", "ON"],
-    #         hue_order=None,
-    #         stat_test=motor_intention.stats_helpers.permutation_onesample(),
-    #         alpha=0.05,
-    #         add_lines="Subject",
-    #         figsize="auto",
-    #         show=False,
-    #     )
-    #     # fig.axes[0].set_ylim(bottom=ymin, top=ymax)
-    #     fig.tight_layout()
-
-    #     bottom, top = fig.axes[0].get_ylim()
-    #     bottom_lims.append(bottom)
-    #     top_lims.append(top)
-    #     figs.append((fig, outpath))
-
-    # bottom_lim = min(bottom_lims)
-    # top_lim = max(top_lims)
-
-    # for fig, outpath in figs:
-    #     fig.axes[0].set_ylim(bottom=bottom_lim, top=top_lim)
-    #     fig.savefig(str(outpath))
-    #     # fig.show()
-    # # plt.show(block=True)
-
-    # bottom_lims = []
-    # top_lims = []
-    # figs = []
-    # for region in region_picks:
-    #     basename = f"decodingtimes_boxplot_{region.lower()}_medoffvson_all.svg"
-    #     outpath = constants.PLOTS / basename
-    #     fig = pte_decode.boxplot_results(
-    #         data=data_raw.query(f"region == '{region}'"),
-    #         outpath=None,
-    #         x="Medication",
-    #         y="Time [s]",
-    #         hue=None,
-    #         order=["OFF", "ON"],
-    #         hue_order=None,
-    #         stat_test=motor_intention.stats_helpers.permutation_twosample(),
-    #         alpha=0.05,
-    #         add_lines=None,
-    #         # title=region,
-    #         figsize="auto",
-    #         show=False,
-    #     )
-    #     # fig.axes[0].set_ylim(bottom=ymin, top=ymax)
-    #     fig.tight_layout()
-
-    #     bottom, top = fig.axes[0].get_ylim()
-    #     bottom_lims.append(bottom)
-    #     top_lims.append(top)
-    #     figs.append((fig, outpath))
-
-    # bottom_lim = min(bottom_lims)
-    # top_lim = max(top_lims)
-
-    # for fig, outpath in figs:
-    #     fig.axes[0].set_ylim(bottom=bottom_lim, top=top_lim)
-    #     fig.savefig(str(outpath))
-    #     # fig.show()
 
 
 if __name__ == "__main__":

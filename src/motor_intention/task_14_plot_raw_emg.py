@@ -1,10 +1,14 @@
 """Plot timelocked features."""
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Annotated
+
 import matplotlib.pyplot as plt
 import mne
 import mne_bids
 import pte
+from pytask import Product
 
 import motor_intention.plotting_settings
 import motor_intention.project_constants as constants
@@ -12,12 +16,15 @@ import motor_intention.project_constants as constants
 PLOT_PATH = constants.PLOTS / "raw_emg.svg"
 
 
-def task_plot_raw_emg(SUBJECT: str = "sub-EL014") -> None:
+def task_plot_raw_emg(
+    subject: str = "sub-EL014",
+    plot_path: Annotated[Path, Product] = PLOT_PATH,
+) -> None:
     file_finder = pte.filetools.get_filefinder(datatype="bids")
     file_finder.find_files(
         directory=constants.RAWDATA_ORIG,
         extensions=".vhdr",
-        keywords=SUBJECT,
+        keywords=[subject],
         medication="Off",
     )
     print(file_finder)
@@ -41,7 +48,7 @@ def task_plot_raw_emg(SUBJECT: str = "sub-EL014") -> None:
     ax.get_yaxis().set_visible(False)
     ax.set_xticks([-3, 0, 2])
     ax.set_xlabel("Time [s]")
-    motor_intention.plotting_settings.save_fig(fig, PLOT_PATH)
+    motor_intention.plotting_settings.save_fig(fig, plot_path)
 
 
 if __name__ == "__main__":

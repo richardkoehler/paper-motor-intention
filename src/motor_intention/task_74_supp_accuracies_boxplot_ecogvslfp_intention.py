@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
 from matplotlib import pyplot as plt
 
@@ -21,21 +21,46 @@ PLOT_PATH = constants.PLOTS / "supplements" / DECODE
 PLOT_PATH.mkdir(parents=True, exist_ok=True)
 BASENAME = "accuracies_boxplot_ecogvslfp"
 
+CHANNEL_TYPES = (
+    "ecog",
+    "dbs",
+)
+
+INPATHS_STIM_OFF = {
+    ch_type: constants.RESULTS / DECODE / "stim_off" / ch_type / "accuracies.csv"
+    for ch_type in CHANNEL_TYPES
+}
+INPATHS_STIM_ON = {
+    ch_type: constants.RESULTS / DECODE / "stim_on" / ch_type / "accuracies.csv"
+    for ch_type in CHANNEL_TYPES
+}
+
 
 class Cond(Enum):
     ECOG = "ECOG"
     STN_LFP = "STN-LFP"
 
 
+def task_plot_accuracies_stim_off(
+    in_paths: dict[Literal["ecog", "dbs"], Path] = INPATHS_STIM_OFF,
+) -> None:
+    plot_accuracies_ecogvslfp(stimulation="Off", in_paths=in_paths)
+
+
+def task_plot_accuracies_stim_on(
+    in_paths: dict[Literal["ecog", "dbs"], Path] = INPATHS_STIM_ON,
+) -> None:
+    plot_accuracies_ecogvslfp(stimulation="On", in_paths=in_paths)
+
+
 def plot_accuracies_ecogvslfp(
     stimulation: Literal["Off", "On"],
+    in_paths: dict[Literal["ecog", "dbs"], Path],
 ) -> None:
     """Plot decoding performance as box- and scatterplot."""
     stim = stimulation.upper()
-    PIPELINE = f"stim_{stimulation.lower()}"
 
     med_conds = ("OFF", "ON") if stimulation == "Off" else ("OFF",)
-    channel_types = ("dbs", "ecog")
     x = "Channels"
     y = "Balanced Accuracy"
 
@@ -47,11 +72,9 @@ def plot_accuracies_ecogvslfp(
     }
 
     data_list = []
-    for channel in channel_types:
-        INPUT_ROOT = constants.RESULTS / DECODE / PIPELINE / channel
-
+    for channel in CHANNEL_TYPES:
         data_raw = (
-            pd.read_csv(INPUT_ROOT / "accuracies.csv")
+            pd.read_csv(in_paths[channel], dtype={"Subject": str})
             .rename(
                 columns={
                     "Channel": "Channels",
@@ -146,42 +169,6 @@ def plot_accuracies_ecogvslfp(
         ax.xaxis.set_tick_params(length=0)
         ax.set_xlabel("")
         motor_intention.plotting_settings.save_fig(fig, outpath)
-
-
-@pytask.mark.depends_on(
-    (
-        constants.RESULTS / DECODE / "stim_off" / "ecog" / "accuracies.csv",
-        constants.RESULTS / DECODE / "stim_off" / "dbs" / "accuracies.csv",
-    )
-)
-@pytask.mark.produces(
-    (
-        PLOT_PATH / f"{BASENAME}_stimoff_medoff.svg",
-        PLOT_PATH / f"{BASENAME}_stimoff_medon.svg",
-        PLOT_PATH / f"{BASENAME}_stimoff_medoff_stats.csv",
-        PLOT_PATH / f"{BASENAME}_stimoff_medon_stats.csv",
-    )
-)
-def task_plot_accuracies_stim_off() -> None:
-    plot_accuracies_ecogvslfp(stimulation="Off")
-
-
-@pytask.mark.depends_on(
-    (
-        constants.RESULTS / DECODE / "stim_on" / "ecog" / "accuracies.csv",
-        constants.RESULTS / DECODE / "stim_on" / "dbs" / "accuracies.csv",
-    )
-)
-@pytask.mark.produces(
-    (
-        PLOT_PATH / f"{BASENAME}_stimon_medoff.svg",
-        PLOT_PATH / f"{BASENAME}_stimon_medon.svg",
-        PLOT_PATH / f"{BASENAME}_stimon_medoff_stats.csv",
-        PLOT_PATH / f"{BASENAME}_stimon_medon_stats.csv",
-    )
-)
-def task_plot_accuracies_stim_on() -> None:
-    plot_accuracies_ecogvslfp(stimulation="On")
 
 
 if __name__ == "__main__":

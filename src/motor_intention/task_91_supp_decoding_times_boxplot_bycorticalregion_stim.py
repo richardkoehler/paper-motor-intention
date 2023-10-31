@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
 from matplotlib import pyplot as plt
 
@@ -23,7 +23,7 @@ PLOT_PATH = constants.PLOTS / DECODE
 PLOT_PATH.mkdir(parents=True, exist_ok=True)
 
 CHANNEL = "ecog"
-TIMES = (
+IN_PATH = (
     constants.RESULTS
     / DECODE
     / f"stim_{STIMULATION}_single_chs"
@@ -42,12 +42,7 @@ class Cond(Enum):
     MOTOR = "Motor"
 
 
-@pytask.mark.depends_on(TIMES)
-@pytask.mark.produces(
-    [PLOT_PATH / (BASENAME + f"_med{med}.svg") for med in STATES]
-    + [PLOT_PATH / (BASENAME + f"_med{med}_stats.csv") for med in STATES]
-)
-def task_plot_decoding_times_bycorticalregion() -> None:
+def task_plot_decoding_times_bycorticalregion(in_path: Path = IN_PATH) -> None:
     """Main function of this script"""
     motor_intention.plotting_settings.activate()
 
@@ -59,7 +54,7 @@ def task_plot_decoding_times_bycorticalregion() -> None:
         .rename(columns={"name": "Channel", "region": x})
         .set_index(["Subject", "Channel"])
     )
-    times = pd.read_csv(TIMES, index_col=["Subject", "Channel"])
+    times = pd.read_csv(in_path, index_col=["Subject", "Channel"])
 
     data_list = []
     for state in ("OFF", "ON"):
@@ -80,8 +75,6 @@ def task_plot_decoding_times_bycorticalregion() -> None:
         .set_index(["Subject", "Channel"])
     )
     data_raw[y] = data_raw[y].clip(upper=0.0)
-    # MED_PAIRED = [sub.strip("sub-") for sub in constants.MED_PAIRED]
-    # data_paired = data_raw.query(f"Subject in {MED_PAIRED}")
 
     motor_intention.plotting_settings.cortical_region()
     for state in STATES:

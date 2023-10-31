@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import gzip
 import json
+from pathlib import Path
+from typing import Annotated
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pte
-import pytask
+from pytask import Product
 
 import motor_intention.plotting_settings
 import motor_intention.project_constants as constants
@@ -17,9 +19,11 @@ FEATURE_PATH = constants.DERIVATIVES / "decode" / "stim_off" / "ecog"
 PLOT_PATH = constants.PLOTS / "features_timelocked.svg"
 
 
-@pytask.mark.depends_on(FEATURE_PATH)
-@pytask.mark.produces(PLOT_PATH)
-def plot_features(SUBJECT: str = "sub-EL014") -> None:
+def task_plot_features(
+    in_path: Path = FEATURE_PATH,
+    out_path: Annotated[Path, Product] = PLOT_PATH,
+    subject: str = "sub-EL014",
+) -> None:
     "Plot features for single subject."
     motor_intention.plotting_settings.activate()
 
@@ -27,16 +31,16 @@ def plot_features(SUBJECT: str = "sub-EL014") -> None:
         axis="columns", how="all"
     )
     coords = (
-        coords_raw.query(f"used == 1 and region == 'Motor' and Subject == '{SUBJECT}'")
+        coords_raw.query(f"used == 1 and region == 'Motor' and Subject == '{subject}'")
         .rename(columns={"name": "Channel"})
         .set_index(["Subject"])
     )
     assert len(coords) == 1
     file_finder = pte.filetools.get_filefinder(datatype="any")
     file_finder.find_files(
-        directory=FEATURE_PATH,
+        directory=in_path,
         extensions="FeaturesTimelocked.json.gz",
-        keywords=f"sub-{SUBJECT}",
+        keywords=[f"sub-{subject}"],
         medication="Off",
     )
     print(file_finder)
@@ -46,7 +50,7 @@ def plot_features(SUBJECT: str = "sub-EL014") -> None:
     f_bands = []
     features = []
     for feature, data in feat["features"].items():
-        if not feature.startswith(coords.loc[SUBJECT, "Channel"]):
+        if not feature.startswith(coords.loc[subject, "Channel"]):
             continue
         f_band = feature.split("_fft_")[1]
         f_band = "HFA" if f_band == "high frequency activity" else f_band.capitalize()
@@ -67,9 +71,6 @@ def plot_features(SUBJECT: str = "sub-EL014") -> None:
         vmin=-max_val,
         vmax=max_val,
     )
-    # xticks = ax.get_xticklabels()
-    # ax.set_xticklabels([-4, -3, -2, -1, 0, 1, 2])
-    # ax.set_title(f"Features for {SUBJECT}")
     ax.axvline(x=30, color="white", linestyle="--", alpha=0.5)
     ax.set_xlabel("Time [s]")
     ax.set_xticks([0, 30, 50])
@@ -88,11 +89,9 @@ def plot_features(SUBJECT: str = "sub-EL014") -> None:
     )
     cbar.outline.set_visible(False)
     cbar.ax.set_xticklabels([round(val, 1) for val in ticks])
-    motor_intention.plotting_settings.save_fig(fig, PLOT_PATH)
+    motor_intention.plotting_settings.save_fig(fig, out_path)
     plt.show(block=True)
 
 
 if __name__ == "__main__":
-    for sub in constants.MED_PAIRED:
-        if sub == "sub-EL014":
-            plot_features(SUBJECT=sub.strip("sub-"))
+    task_plot_features(subject="EL014")

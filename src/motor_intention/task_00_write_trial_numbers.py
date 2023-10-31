@@ -7,6 +7,7 @@ from typing import Annotated
 
 import mne
 import mne_bids
+import numpy as np
 import pandas as pd
 import pte
 from pytask import Product
@@ -19,7 +20,7 @@ FNAME_TRIALS = OUT_DIR / "trial_numbers.csv"
 FNAME_STATS = OUT_DIR / "trial_numbers_stats.csv"
 
 
-def _get_events(raw: mne.io.Raw, event_ids: dict) -> list:
+def _get_events(raw: mne.io.Raw, event_ids: dict[str, int]) -> list[np.ndarray]:
     event_list = []
     for key, value in event_ids.items():
         event_list.append(

@@ -1,12 +1,13 @@
 """Perform and save time frequency analysis of given files."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal
 
 import pandas as pd
 import pte_decode
-import pytask
 from matplotlib import pyplot as plt
+from numpy import True_
 
 import motor_intention.plotting_settings
 import motor_intention.project_constants as constants
@@ -14,24 +15,46 @@ import motor_intention.project_constants as constants
 PLOT_DIR = constants.PLOTS / "readiness_potential"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
-BASENAME = "rp_lineplot"
+RP_DIR = constants.DERIVATIVES / "readiness_potential"
+IN_PATHS = {
+    (ch, stim): RP_DIR / f"stim_{stim.lower()}" / ch / "readiness_potential.csv"
+    for ch in ("ecog", "dbs")
+    for stim in ("Off", "On")
+}
 
 
-def rp_lineplot(
-    ch_type: Literal["ecog", "dbs"],
-    show_plots: bool = False,  # stimulation: Literal["Off", "On"],
+def task_rp_lineplot(
+    in_paths: dict[
+        tuple[Literal["ecog", "dbs"], Literal["Off", "On"]],
+        Path,
+    ] = IN_PATHS,
+    show_plots: bool = False,
 ) -> None:
     """Main function of this script."""
     motor_intention.plotting_settings.activate()
     motor_intention.plotting_settings.medoff_medon_stimon()
 
-    ch_str = "motorcortex" if ch_type == "ecog" else "stn"
-    outpath = PLOT_DIR / (f"{BASENAME}_{ch_str}.svg")
+    for channel_type in ("ecog", "dbs"):
+        rp_lineplot(channel_type, in_paths, show_plots)
+
+
+def rp_lineplot(
+    channel_type: Literal["ecog", "dbs"],
+    in_paths: dict[
+        tuple[Literal["ecog", "dbs"], Literal["Off", "On"]],
+        Path,
+    ],
+    show_plots: bool = False,
+) -> None:
     fig, axs = plt.subplots(3, 1, sharex=True, sharey=True, figsize=(2.3, 3.4))
     i = 0
-    legend = True
-    for stimulation in ("Off", "On"):
-        PIPELINE = f"stim_{stimulation.lower()}"
+    legend = True_
+    ch_str = "motorcortex" if channel_type == "ecog" else "stn"
+    outpath = PLOT_DIR / (f"rp_lineplot_{ch_str}.svg")
+    for (ch_type, stimulation), in_path in in_paths.items():
+        if ch_type != channel_type:
+            continue
+        PIPELINE = in_path.parents[0].name
         IN_DIR = constants.DERIVATIVES / "readiness_potential" / PIPELINE / ch_type
 
         X_LABEL = "Time [s]"
@@ -39,6 +62,9 @@ def rp_lineplot(
             Y_LIMS = (-68, 10)
         elif ch_type == "dbs":
             Y_LIMS = (-26, 4)
+        else:
+            msg = f"Unknown ch_type: {ch_type}"
+            raise ValueError(msg)
         Y_LABEL = "Voltage [µV]"
         THRESHOLD = 0.0
         CORRECTION_METHOD = "cluster_pvals"
@@ -46,7 +72,7 @@ def rp_lineplot(
         N_PERM = 10000
 
         rp = pd.read_csv(
-            str(IN_DIR / "readiness_potential.csv"),
+            IN_DIR / "readiness_potential.csv",
             dtype={
                 "Subject": str,
                 "Medication": str,
@@ -56,17 +82,17 @@ def rp_lineplot(
         ).replace({"MotorCortex": "Motor Cortex"})
 
         if stimulation == "Off":
-            COND = "Medication"
+            cond = "Medication"
         else:
-            COND = "Stimulation"
+            cond = "Stimulation"
             rp = rp.query("Medication == 'OFF'")
         rp = rp.set_index(["Subject", "Medication", "Stimulation", "Channels"])
         times = rp.columns.to_numpy(dtype=float)
         rps = {
-            "OFF": rp.query(f"{COND} == 'OFF'").to_numpy().T,
-            "ON": rp.query(f"{COND} == 'ON'").to_numpy().T,
+            "OFF": rp.query(f"{cond} == 'OFF'").to_numpy().T,
+            "ON": rp.query(f"{cond} == 'ON'").to_numpy().T,
         }
-        conds = ("OFF", "ON") if COND == "Medication" else ("ON",)
+        conds = ("OFF", "ON") if cond == "Medication" else ("ON",)
         for cond in conds:
             color = plt.rcParams["axes.prop_cycle"].by_key()["color"][i]
             x_label = X_LABEL if i == 2 else None
@@ -110,30 +136,5 @@ def rp_lineplot(
         plt.close()
 
 
-@pytask.mark.depends_on(
-    (
-        constants.DERIVATIVES / "readiness_potential" / "stim_off" / "ecog",
-        constants.DERIVATIVES / "readiness_potential" / "stim_on" / "ecog",
-    )
-)
-@pytask.mark.produces(PLOT_DIR / (f"{BASENAME}_motorcortex.svg"))
-def task_rp_lineplot_ecog() -> None:
-    """Run main function."""
-    rp_lineplot(ch_type="ecog", show_plots=False)
-
-
-@pytask.mark.depends_on(
-    (
-        constants.DERIVATIVES / "readiness_potential" / "stim_off" / "dbs",
-        constants.DERIVATIVES / "readiness_potential" / "stim_on" / "dbs",
-    )
-)
-@pytask.mark.produces(PLOT_DIR / (f"{BASENAME}_stn.svg"))
-def task_rp_lineplot_dbs() -> None:
-    """Run main function."""
-    rp_lineplot(ch_type="dbs", show_plots=False)
-
-
 if __name__ == "__main__":
-    rp_lineplot(ch_type="ecog", show_plots=True)
-    rp_lineplot(ch_type="dbs", show_plots=True)
+    task_rp_lineplot(show_plots=True)

@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
+from typing import Annotated, Literal
 
 import matplotlib as mpl
 import numpy as np
 import pte
 import pte_decode
-import pytask
 from matplotlib import pyplot as plt
+from pytask import Product
 
 import motor_intention.plotting_settings
 import motor_intention.project_constants as constants
@@ -19,20 +21,23 @@ PLOT_PATH.mkdir(exist_ok=True, parents=True)
 
 BASENAME = "prediction_lineplot_ecogvslfp"
 
+CH_TYPES = ("ecog", "dbs")
+STIM = ("Off", "On")
+IN_PATHS = {
+    (ch_type, stim): constants.DERIVATIVES / DECODE / f"stim_{stim.lower()}" / ch_type
+    for ch_type in CH_TYPES
+    for stim in STIM
+}
 
-@pytask.mark.depends_on(
-    (
-        constants.DERIVATIVES / DECODE / "stim_off" / "ecog",
-        constants.DERIVATIVES / DECODE / "stim_off" / "dbs",
-    )
-)
-@pytask.mark.produces(PLOT_PATH / (BASENAME + ".svg"))
-def task_prediction_lineplot_ecogvslfp() -> None:
+
+def task_prediction_lineplot_ecogvslfp(
+    in_paths: dict[
+        tuple[Literal["ecog", "dbs"], Literal["Off", "On"]], Path
+    ] = IN_PATHS,
+    plot_path: Annotated[Path, Product] = PLOT_PATH / (BASENAME + ".svg"),
+    cluster_path: Annotated[Path, Product] = PLOT_PATH / f"{BASENAME}_clusters.json",
+) -> None:
     """Main function of this script"""
-    channel_types = ("dbs", "ecog")
-    outpath = PLOT_PATH / f"{BASENAME}.svg"
-    cluster_path = PLOT_PATH / f"{BASENAME}_clusters.json"
-
     motor_intention.plotting_settings.activate()
     motor_intention.plotting_settings.medoff_medon_stimon()
 
@@ -48,16 +53,15 @@ def task_prediction_lineplot_ecogvslfp() -> None:
     i = 0
     legend = True
     clusters = {}
-    for stimulation in ("Off", "On"):
-        PIPELINE = f"stim_{stimulation.lower()}"
+    for stimulation in STIM:
         conds_med = ("OFF", "ON") if stimulation == "Off" else ("OFF",)
         for med in conds_med:
             data_map = {}
-            for channel in channel_types:
-                INPUT_DIR = constants.DERIVATIVES / DECODE / PIPELINE / channel
+            for ch_type in CH_TYPES:
+                in_path = in_paths[(ch_type, stimulation)]
 
                 file_finder.find_files(
-                    directory=INPUT_DIR,
+                    directory=in_path,
                     keywords=None,
                     exclude=None,
                     extensions=["PredTimelocked.json"],
@@ -74,10 +78,10 @@ def task_prediction_lineplot_ecogvslfp() -> None:
                     baseline_trialwise=False,
                     average_predictions=True,
                 )
-                data_map[channel] = data
+                data_map[ch_type] = data
 
-            with file_finder.files[0].open(mode="w", encoding="utf-8") as file:
-                pred_data = json.load(file)
+            with Path(file_finder.files[0]).open("w", encoding="utf-8") as f:
+                pred_data = json.load(f)
             times = np.array(pred_data["times"])
 
             ecog = data_map["ecog"].sort_values(by=["Subject"])
@@ -87,7 +91,10 @@ def task_prediction_lineplot_ecogvslfp() -> None:
             assert ecog_data.shape == lfp_data.shape
             print("Subjects used:", ecog.shape[0])
 
-            color = mpl.rcParams["axes.prop_cycle"].by_key()["color"][i]
+            colors = (
+                mpl.rcParams["axes.prop_cycle"].by_key()["color"][i],
+                motor_intention.plotting_settings.Color.STN.value,
+            )
             x_label = "Time [s]" if i == 2 else None
             _, cluster_times = pte_decode.lineplot_compare(
                 x_1=ecog_data,
@@ -107,7 +114,7 @@ def task_prediction_lineplot_ecogvslfp() -> None:
                 legend=legend,
                 add_vline=0.0,
                 print_n=True,
-                color=color,
+                colors=colors,
                 show=False,
             )
             clusters[f"Med. {med}, Stim. {stimulation.upper()}"] = cluster_times
@@ -121,9 +128,9 @@ def task_prediction_lineplot_ecogvslfp() -> None:
             axs[i].spines["bottom"].set_position(("outward", 3))
             legend = False
             i += 1
-    with cluster_path.open("w", encoding="utf-8") as file:
-        json.dump(clusters, file, indent=4)
-    motor_intention.plotting_settings.save_fig(fig, outpath)
+    with cluster_path.open("w", encoding="utf-8") as f:
+        json.dump(clusters, f, indent=4)
+    motor_intention.plotting_settings.save_fig(fig, plot_path)
 
 
 if __name__ == "__main__":

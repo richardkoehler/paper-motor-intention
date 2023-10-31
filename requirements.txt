@@ -4,4 +4,5 @@
 -e pte-stats@https://github.com/richardkoehler/pte-stats
 -e pte@https://github.com/richardkoehler/pte
 -e .
+pluggy>=1.3
 pytask

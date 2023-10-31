@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
 
 import motor_intention.plotting_settings
@@ -19,10 +20,16 @@ PLOT_PATH = constants.PLOTS / "supplements" / DECODE
 PLOT_PATH.mkdir(parents=True, exist_ok=True)
 
 CHANNEL = "dbs"
-ACCURACIES = (
-    constants.RESULTS / DECODE / "stim_off" / CHANNEL / "accuracies.csv",
-    constants.RESULTS / DECODE / "stim_on" / CHANNEL / "accuracies.csv",
-)
+STIM = ("Off", "On")
+IN_PATHS = {
+    stim: constants.RESULTS
+    / DECODE
+    / f"stim_{stim.lower()}"
+    / CHANNEL
+    / "accuracies.csv"
+    for stim in STIM
+}
+
 BASENAME = f"accuracies_boxplot_{CHANNEL}_medoff_medon_stimon"
 FNAME_PLOT = PLOT_PATH / (BASENAME + ".svg")
 FNAME_STATS = PLOT_PATH / (BASENAME + "_stats.csv")
@@ -34,10 +41,9 @@ class Cond(Enum):
     ON_STN_DBS = "ON STN-DBS"
 
 
-@pytask.mark.depends_on(ACCURACIES)
-@pytask.mark.produces(FNAME_PLOT)
-@pytask.mark.produces(FNAME_STATS)
-def task_plot_accuracies_medoffvson() -> None:
+def task_plot_accuracies_medoffvson(
+    in_paths: dict[Literal["Off", "On"], Path] = IN_PATHS,
+) -> None:
     """Main function of this script"""
     motor_intention.plotting_settings.activate()
     motor_intention.plotting_settings.medoff_medon_stimon()
@@ -46,8 +52,7 @@ def task_plot_accuracies_medoffvson() -> None:
     y = "Balanced Accuracy"
     data_list = []
     for stimulation in ("Off", "On"):
-        PIPELINE = f"stim_{stimulation.lower()}"
-        fpath = constants.RESULTS / DECODE / PIPELINE / CHANNEL / "accuracies.csv"
+        fpath = in_paths[stimulation]
         acc = pd.read_csv(fpath).rename(
             columns={
                 "Channel": "Channels",
@@ -154,4 +159,3 @@ def task_plot_accuracies_medoffvson() -> None:
 
 if __name__ == "__main__":
     task_plot_accuracies_medoffvson()
-    # plt.show(block=True)

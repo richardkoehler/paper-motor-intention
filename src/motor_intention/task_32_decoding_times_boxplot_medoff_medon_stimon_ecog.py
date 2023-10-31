@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
 from matplotlib import pyplot as plt
 
@@ -20,10 +21,16 @@ PLOT_PATH = constants.PLOTS / DECODE
 PLOT_PATH.mkdir(parents=True, exist_ok=True)
 
 CHANNEL = "ecog"
-DECODING_TIMES = (
-    constants.RESULTS / DECODE / "stim_off" / CHANNEL / "decodingtimes.csv",
-    constants.RESULTS / DECODE / "stim_on" / CHANNEL / "decodingtimes.csv",
-)
+STIM = ("Off", "On")
+IN_PATHS = {
+    stim: constants.RESULTS
+    / DECODE
+    / f"stim_{stim.lower()}"
+    / CHANNEL
+    / "decodingtimes.csv"
+    for stim in STIM
+}
+
 BASENAME = f"decodingtimes_boxplot_{CHANNEL}_medoff_medon_stimon"
 FNAME_PLOT = PLOT_PATH / (BASENAME + ".svg")
 FNAME_STATS = PLOT_PATH / (BASENAME + "_stats.csv")
@@ -35,10 +42,10 @@ class Cond(Enum):
     ON_STN_DBS = "ON STN-DBS"
 
 
-@pytask.mark.depends_on(DECODING_TIMES)
-@pytask.mark.produces(FNAME_PLOT)
-@pytask.mark.produces(FNAME_STATS)
-def task_plot_decodingtimes_medoffmedonstimon() -> None:
+def task_plot_decodingtimes_medoffmedonstimon(
+    in_paths: dict[Literal["Off", "On"], Path] = IN_PATHS,
+    show_plots: bool = False,
+) -> None:
     """Main function of this script"""
     motor_intention.plotting_settings.activate()
     motor_intention.plotting_settings.medoff_medon_stimon()
@@ -47,8 +54,7 @@ def task_plot_decodingtimes_medoffmedonstimon() -> None:
     y = "Time [s]"
     data_list = []
     for stimulation in ("Off", "On"):
-        PIPELINE = f"stim_{stimulation.lower()}"
-        fpath = constants.RESULTS / DECODE / PIPELINE / CHANNEL / "decodingtimes.csv"
+        fpath = in_paths[stimulation]
         acc = pd.read_csv(fpath).rename(
             columns={
                 "Earliest Timepoint": y,
@@ -106,8 +112,12 @@ def task_plot_decodingtimes_medoffmedonstimon() -> None:
         zorder=0,
     )
     motor_intention.plotting_settings.save_fig(fig, FNAME_PLOT)
-    FNAME_STATS.unlink(missing_ok=True)
+    if show_plots:
+        plt.show(block=True)
+    else:
+        plt.close(fig)
 
+    FNAME_STATS.unlink(missing_ok=True)
     with FNAME_STATS.open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["description", "mean", "std", "statistic", "P"])
@@ -134,8 +144,8 @@ def task_plot_decodingtimes_medoffmedonstimon() -> None:
                 ]
             )
 
-        def statistic(x, y, axis=0):
-            return np.mean(a=x, axis=axis) - np.mean(a=y, axis=axis)
+        def statistic(x, y) -> float:
+            return np.mean(a=x, axis=0) - np.mean(a=y, axis=0)
 
         for cond_a, cond_b in (
             (Cond.OFF_THERAPY, Cond.ON_LEVODOPA),
@@ -165,5 +175,4 @@ def task_plot_decodingtimes_medoffmedonstimon() -> None:
 
 
 if __name__ == "__main__":
-    task_plot_decodingtimes_medoffmedonstimon()
-    plt.show(block=True)
+    task_plot_decodingtimes_medoffmedonstimon(show_plots=False)

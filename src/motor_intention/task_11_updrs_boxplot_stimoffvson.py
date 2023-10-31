@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
+from typing import Annotated
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
+from pytask import Product
 
 import motor_intention.plotting_settings
 import motor_intention.project_constants as constants
@@ -29,16 +31,17 @@ class Cond(Enum):
     ON_STN_DBS = "ON STN-DBS"
 
 
-@pytask.mark.depends_on(PART_INFO)
-@pytask.mark.produces(FNAME_PLOT)
-@pytask.mark.produces(FNAME_STATS)
-def task_plot_updrs_medoffvson() -> None:
+def task_plot_updrs_medoffvson(
+    part_info: Path = PART_INFO,
+    outpath_plot: Annotated[Path, Product] = FNAME_PLOT,
+    outpath_stats: Annotated[Path, Product] = FNAME_STATS,
+) -> None:
     motor_intention.plotting_settings.activate()
     motor_intention.plotting_settings.stimoffvson()
     x = "Medication"
     y = "UPDRS-III"
     order = [Cond.OFF_THERAPY, Cond.ON_STN_DBS]
-    data_raw = pd.read_csv(PART_INFO).rename(
+    data_raw = pd.read_csv(part_info).rename(
         columns={
             "ID": "Subject",
             f"{y} postopDBSOFF": Cond.OFF_THERAPY.value,
@@ -60,7 +63,6 @@ def task_plot_updrs_medoffvson() -> None:
         .sort_values("Subject")
     )
     print(data.head())
-    outpath = PLOT_PATH / (BASENAME + ".svg")
     figsize = (1.0, 1.3)
     fig = pte_decode.boxplot_updrs(
         data=data,
@@ -79,10 +81,10 @@ def task_plot_updrs_medoffvson() -> None:
     ax.set_ylim(ylims[0], ylims[-1])
     ax.set_yticks([ylims[0], ylims[-1]])
     ax.set_xticklabels(ax.get_xticklabels(), weight="bold")
-    motor_intention.plotting_settings.save_fig(fig, outpath)
+    motor_intention.plotting_settings.save_fig(fig, outpath_plot)
 
-    FNAME_STATS.unlink(missing_ok=True)
-    with FNAME_STATS.open(mode="w", encoding="utf-8", newline="") as file:
+    outpath_stats.unlink(missing_ok=True)
+    with outpath_stats.open(mode="w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["description", "mean", "std", "statistic", "P"])
 

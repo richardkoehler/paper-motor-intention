@@ -1,6 +1,7 @@
 """Calculate and save earliest decoding times."""
 from __future__ import annotations
 
+from collections.abc import Sequence
 import pathlib
 import time
 from typing import Annotated, Literal
@@ -13,28 +14,119 @@ from pytask import Product
 
 import motor_intention.project_constants as constants
 
-INPATH_STIMOFF = constants.DERIVATIVES / "decode" / "stim_off"
-INPATH_STIMON = constants.DERIVATIVES / "decode" / "stim_on"
-OUTPATH_STIMOFF = constants.RESULTS / "decode" / "stim_off"
-OUTPATH_STIMON = constants.RESULTS / "decode" / "stim_on"
-INPATH_SINGLE_STIMOFF = constants.DERIVATIVES / "decode" / "stim_off_single_chs"
-OUTPATH_SINGLE_STIMOFF = constants.RESULTS / "decode" / "stim_off_single_chs"
-INPATH_SINGLE_STIMON = constants.DERIVATIVES / "decode" / "stim_on_single_chs"
-OUTPATH_SINGLE_STIMON = constants.RESULTS / "decode" / "stim_on_single_chs"
+
+CHANNELS = ("ecog", "dbs")
+
+
+INPATHS_STIM_OFF = {
+    (ch, "stim_off"): constants.DERIVATIVES / "decode" / "stim_off" / ch
+    for ch in CHANNELS
+}
+OUTPATHS_STIM_OFF = {
+    (ch, "stim_off"): constants.RESULTS
+    / "decode"
+    / "stim_off"
+    / ch
+    / "decodingtimes.csv"
+    for ch in CHANNELS
+}
+INPATHS_STIM_ON = {
+    (ch, "stim_on"): constants.DERIVATIVES / "decode" / "stim_on" / ch
+    for ch in CHANNELS
+}
+OUTPATHS_STIM_ON = {
+    (ch, "stim_on"): constants.RESULTS
+    / "decode"
+    / "stim_on"
+    / ch
+    / "decodingtimes.csv"
+    for ch in CHANNELS
+}
+INPATHS_SINGLE_STIM_OFF = {
+    (ch, "stim_off_single_chs"): constants.DERIVATIVES
+    / "decode"
+    / "stim_off_single_chs"
+    / ch
+    for ch in ("ecog",)
+}
+OUTPATHS_SINGLE_STIM_OFF = {
+    (ch, "stim_off_single_chs"): constants.RESULTS
+    / "decode"
+    / "stim_off_single_chs"
+    / ch
+    / "decodingtimes.csv"
+    for ch in ("ecog",)
+}
+INPATHS_SINGLE_STIM_ON = {
+    (ch, "stim_on_single_chs"): constants.DERIVATIVES
+    / "decode"
+    / "stim_off_single_chs"
+    / ch
+    for ch in ("ecog",)
+}
+OUTPATHS_SINGLE_STIM_ON = {
+    (ch, "stim_on_single_chs"): constants.RESULTS
+    / "decode"
+    / "stim_on_single_chs"
+    / ch
+    / "decodingtimes.csv"
+    for ch in ("ecog",)
+}
+
+
+def task_decoding_times_stimoff(
+    in_paths: dict[
+        tuple[Literal["ecog", "dbs"], Literal["stim_on", "stim_off"]],
+        Sequence[pathlib.Path],
+    ] = INPATHS_STIM_OFF,
+    out_paths: Sequence[Annotated[pathlib.Path, Product]] = OUTPATHS_STIM_OFF,
+) -> None:
+    calculate_decoding_times(
+        stimulation="Off", in_paths=in_paths, out_paths=out_paths
+    )
+
+
+def task_decoding_times_stimon(
+    in_paths: dict[
+        tuple[Literal["ecog", "dbs"], Literal["stim_on", "stim_off"]],
+        Sequence[pathlib.Path],
+    ] = None,
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
+) -> None:
+    calculate_decoding_times(stimulation="On")
+
+
+def task_decoding_times_single_ch(
+    in_paths: dict[
+        tuple[Literal["ecog", "dbs"], Literal["stim_on", "stim_off"]],
+        Sequence[pathlib.Path],
+    ] = None,
+    out_paths: dict[str, Literal["ecog", "dbs"][pathlib.Path, Product]]
+    | None = None,
+) -> None:
+    calculate_decoding_times(stimulation="Off", channels_used="single")
+
+
+def task_decoding_times_single_ch_stimon(
+    in_paths: dict[
+        tuple[Literal["ecog", "dbs"], Literal["stim_on", "stim_off"]],
+        Sequence[pathlib.Path],
+    ] = None,
+    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
+) -> None:
+    calculate_decoding_times(stimulation="On", channels_used="single")
 
 
 def calculate_decoding_times(
     stimulation: Literal["Off", "On"],
-    channels_used: Literal["all", "single"] = "all",
+    channels_used: Literal["all", "single"],
+    inpaths: dict[
+        tuple[Literal["ecog", "dbs"], Literal["stim_on", "stim_off"]],
+        Sequence[pathlib.Path],
+    ],
+    outpaths: Sequence[pathlib.Path],
 ) -> None:
     """Main function of this script"""
-    PIPELINE = f"stim_{stimulation.lower()}"
-    if channels_used == "single":
-        PIPELINE = f"{PIPELINE}_single_chs"
-    medication = None if stimulation == "Off" else "Off"
-
-    channel_types = ("dbs", "ecog") if channels_used == "all" else ("ecog",)
-
     N_JOBS = -1
 
     RESAMPLE_TRIALS = 50
@@ -58,9 +150,20 @@ def calculate_decoding_times(
             return default_value, trials_used
         return timepoint, trials_used
 
-    file_finder = pte.filetools.DefaultFinder(datatype="any")
+    PIPELINE = f"stim_{stimulation.lower()}"
+
+    if channels_used == "single":
+        PIPELINE = f"{PIPELINE}_single_chs"
+
+    stimulation = "On" if stimulation == "On" else "Off"
+
+    medication = None if stimulation == "Off" else "Off"
+
+    channel_types = ("dbs", "ecog") if channels_used == "all" else ("ecog",)
+
+    file_finder = pte.filetools.DefaultFinder()
     start = time.time()
-    for channel in channel_types:
+    for () in channel_types:
         INPUT_PATH = constants.DERIVATIVES / "decode" / PIPELINE / channel
         OUTPUT_PATH = constants.RESULTS / "decode" / PIPELINE / channel
         OUTPUT_PATH.mkdir(exist_ok=True, parents=True)
@@ -129,60 +232,6 @@ def calculate_decoding_times(
             index=False,
         )
     print(f"Time elapsed: {(time.time() - start) / 60:.1f} minutes")
-
-
-def task_decoding_times_stimoff(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-) -> None:
-    if out_paths is None:
-        out_paths = {
-            ch: OUTPATH_STIMOFF / ch / "decodingtimes.csv" for ch in ("ecog", "dbs")
-        }
-    if in_paths is None:
-        in_paths = {ch: INPATH_STIMOFF / ch for ch in ("ecog", "dbs")}
-    calculate_decoding_times(stimulation="Off")
-
-
-def task_decoding_times_stimon(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-) -> None:
-    if out_paths is None:
-        out_paths = {
-            ch: OUTPATH_STIMON / ch / "decodingtimes.csv" for ch in ("ecog", "dbs")
-        }
-    if in_paths is None:
-        in_paths = {ch: INPATH_STIMON / ch for ch in ("ecog", "dbs")}
-    calculate_decoding_times(stimulation="On")
-
-
-def task_decoding_times_single_ch(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-) -> None:
-    if out_paths is None:
-        out_paths = {
-            ch: OUTPATH_SINGLE_STIMOFF / ch / "decodingtimes.csv"
-            for ch in ("ecog", "dbs")
-        }
-    if in_paths is None:
-        in_paths = {ch: INPATH_SINGLE_STIMOFF / ch for ch in ("ecog", "dbs")}
-    calculate_decoding_times(stimulation="Off", channels_used="single")
-
-
-def task_decoding_times_single_ch_stimon(
-    in_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-    out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
-) -> None:
-    if out_paths is None:
-        out_paths = {
-            ch: OUTPATH_SINGLE_STIMON / ch / "decodingtimes.csv"
-            for ch in ("ecog", "dbs")
-        }
-    if in_paths is None:
-        in_paths = {ch: INPATH_SINGLE_STIMON / ch for ch in ("ecog", "dbs")}
-    calculate_decoding_times(stimulation="On", channels_used="single")
 
 
 if __name__ == "__main__":

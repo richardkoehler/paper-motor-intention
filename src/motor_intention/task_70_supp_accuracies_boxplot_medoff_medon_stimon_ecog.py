@@ -1,30 +1,36 @@
-"""Plot decoding times."""
+"""Plot decoding performance."""
 from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
-from matplotlib import pyplot as plt
 
 import motor_intention.plotting_settings
 import motor_intention.project_constants as constants
 import motor_intention.stats_helpers
 
 DECODE = "decode"
-PLOT_PATH = constants.PLOTS / "supplements" / DECODE
+PLOT_PATH = constants.PLOTS / DECODE
 PLOT_PATH.mkdir(parents=True, exist_ok=True)
 
-CHANNEL = "dbs"
-DECODING_TIMES = (
-    constants.RESULTS / DECODE / "stim_off" / CHANNEL / "decodingtimes.csv",
-    constants.RESULTS / DECODE / "stim_on" / CHANNEL / "decodingtimes.csv",
-)
-BASENAME = f"decodingtimes_boxplot_{CHANNEL}_medoff_medon_stimon"
+CHANNEL = "ecog"
+STIM = ("Off", "On")
+IN_PATHS = {
+    stim: constants.RESULTS
+    / DECODE
+    / f"stim_{stim.lower()}"
+    / CHANNEL
+    / "accuracies.csv"
+    for stim in STIM
+}
+
+BASENAME = f"accuracies_boxplot_{CHANNEL}_medoff_medon_stimon"
 FNAME_PLOT = PLOT_PATH / (BASENAME + ".svg")
 FNAME_STATS = PLOT_PATH / (BASENAME + "_stats.csv")
 
@@ -35,30 +41,27 @@ class Cond(Enum):
     ON_STN_DBS = "ON STN-DBS"
 
 
-@pytask.mark.depends_on(DECODING_TIMES)
-@pytask.mark.produces(FNAME_PLOT)
-@pytask.mark.produces(FNAME_STATS)
-def task_plot_accuracies_medoffvson() -> None:
+def task_plot_accuracies_medoffvson(
+    in_paths: dict[Literal["Off", "On"], Path] = IN_PATHS,
+) -> None:
     """Main function of this script"""
     motor_intention.plotting_settings.activate()
     motor_intention.plotting_settings.medoff_medon_stimon()
 
     x = "Condition"
-    y = "Time [s]"
+    y = "Balanced Accuracy"
     data_list = []
     for stimulation in ("Off", "On"):
-        PIPELINE = f"stim_{stimulation.lower()}"
-        fpath = constants.RESULTS / DECODE / PIPELINE / CHANNEL / "decodingtimes.csv"
-        data_raw = pd.read_csv(fpath).rename(
+        fpath = in_paths[stimulation]
+        acc = pd.read_csv(fpath).rename(
             columns={
-                "Earliest Timepoint": y,
                 "Channel": "Channels",
+                "balanced_accuracy": "Balanced Accuracy",
             }
         )
-        data_raw = data_raw.loc[:, y].clip(upper=0.0)
         if stimulation == "On":
-            data_raw = data_raw.query("Stimulation == 'ON' and Medication == 'OFF'")
-        data_list.append(data_raw)
+            acc = acc.query("Stimulation == 'ON' and Medication == 'OFF'")
+        data_list.append(acc)
     data = pd.concat(data_list, ignore_index=True)
     for i, row in data.iterrows():
         med, stim = row["Medication"], row["Stimulation"]
@@ -69,9 +72,13 @@ def task_plot_accuracies_medoffvson() -> None:
         elif med == "OFF" and stim == "OFF":
             data.loc[i, "Condition"] = Cond.OFF_THERAPY.value
         else:
-            msg = f"Unknown combination of medication and stimulation. Got:{med = }, {stim = }"
+            msg = (
+                f"Unknown combination of medication and stimulation."
+                f" Got:{med = }, {stim = }"
+            )
             raise ValueError(msg)
 
+    outpath = PLOT_PATH / (BASENAME + ".svg")
     figsize = (1.7, 1.3)
     fig = pte_decode.boxplot_all_conds(
         data=data,
@@ -88,17 +95,14 @@ def task_plot_accuracies_medoffvson() -> None:
         show=False,
     )
     ax = fig.axes[0]
-    print(ax.get_xlim())
-    xlims = (-2.0, 0.0)
-    ax.set_xlim(xlims[0], xlims[1])
-    ax.set_xticks([xlims[0], -1.0, xlims[1]])
-    ax.set_yticklabels(
-        ax.get_yticklabels(),
-        weight="bold",
-    )
-    motor_intention.plotting_settings.save_fig(fig, FNAME_PLOT)
-    FNAME_STATS.unlink(missing_ok=True)
+    # print(ax.get_xlim())
+    ax.axvline(0.5, color="black", linestyle="--", alpha=0.5)
+    ax.set_xlim(0.5, 0.95)
+    ax.set_xticks([0.5, 0.6, 0.7, 0.8, 0.95])
+    ax.set_yticklabels(ax.get_yticklabels(), weight="bold")
+    motor_intention.plotting_settings.save_fig(fig, outpath)
 
+    FNAME_STATS.unlink(missing_ok=True)
     with FNAME_STATS.open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["description", "mean", "std", "statistic", "P"])
@@ -108,7 +112,7 @@ def task_plot_accuracies_medoffvson() -> None:
             print(f"{description = }")
             data_cond = data.query(f"{x} == '{cond.value}'")[y].to_numpy()
             test = scipy.stats.permutation_test(
-                (data_cond - 0.0,),
+                (data_cond - 0.5,),
                 statistic,
                 vectorized=True,
                 n_resamples=int(1e6),
@@ -157,4 +161,3 @@ def task_plot_accuracies_medoffvson() -> None:
 
 if __name__ == "__main__":
     task_plot_accuracies_medoffvson()
-    plt.show(block=True)

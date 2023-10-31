@@ -1,6 +1,8 @@
 """Plot correlation between performance and decoding time for stimulation on and off."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import pte_stats
 import scipy.stats
@@ -10,32 +12,38 @@ from matplotlib import pyplot as plt
 import motor_intention.plotting_settings
 import motor_intention.project_constants as constants
 
-item_x = "Time [s]"
-item_y = "Balanced Accuracy"
-diff_str = r"$Δ_{ON-OFF}$"
-x = f"{item_x} {diff_str}"
-y = f"{item_y} {diff_str}"
-x_str = x.replace(":", "").replace(".", "")
-y_str = y.replace(":", "").replace(".", "")
-BASENAME = f"correlation_{x_str}_{y_str}"
+ITEM_X = "Time [s]"
+ITEM_Y = "Balanced Accuracy"
 
 
-def task_plot_correlation_perf_time() -> None:
+def task_plot_correlation_perf_time(
+    in_path: Path = constants.RESULTS
+    / "decode"
+    / "stim_on"
+    / "ecog"
+    / "accuracies.csv",
+) -> None:
     """Main function of this script"""
     motor_intention.plotting_settings.activate()
 
-    INPUT_DIR = constants.RESULTS / "decode" / "stim_on" / "ecog"
     PLOT_PATH = constants.PLOTS / "supplements" / "decode"
     PLOT_PATH.mkdir(parents=True, exist_ok=True)
 
     STIM_PAIRED_SUBS = [sub.strip("sub-") for sub in constants.STIM_PAIRED]
 
+    diff_str = r"$Δ_{ON-OFF}$"
+    x = f"{ITEM_X} {diff_str}"
+    y = f"{ITEM_Y} {diff_str}"
+    x_str = x.replace(":", "").replace(".", "")
+    y_str = y.replace(":", "").replace(".", "")
+    basename = f"correlation_{x_str}_{y_str}"
+
     data = (
-        pd.read_csv(INPUT_DIR / "accuracies.csv")
+        pd.read_csv(in_path)
         .rename(
             columns={
                 "channel": "Channels",
-                "balanced_accuracy": item_y,
+                "balanced_accuracy": ITEM_Y,
             }
         )
         .query(f"Subject in {STIM_PAIRED_SUBS} and Medication == 'OFF'")
@@ -49,15 +57,15 @@ def task_plot_correlation_perf_time() -> None:
             keep.append(False)
     performance = (
         data[keep]
-        .loc[:, ["Stimulation", item_y]]
+        .loc[:, ["Stimulation", ITEM_Y]]
         .reset_index()
         .set_index(["Subject", "Stimulation"])
     )
     data = (
-        pd.read_csv(INPUT_DIR / "decodingtimes.csv")
+        pd.read_csv(in_path / "decodingtimes.csv")
         .rename(
             columns={
-                "Earliest Timepoint": item_x,
+                "Earliest Timepoint": ITEM_X,
                 "Channel": "Channels",
             }
         )
@@ -70,10 +78,10 @@ def task_plot_correlation_perf_time() -> None:
             keep.append(True)
         else:
             keep.append(False)
-    data[item_x] = data[item_x].clip(upper=0.0)
+    data[ITEM_X] = data[ITEM_X].clip(upper=0.0)
     time = (
         data[keep]
-        .loc[:, ["Stimulation", item_x]]
+        .loc[:, ["Stimulation", ITEM_X]]
         .reset_index()
         .set_index(["Subject", "Stimulation"])
     )
@@ -81,7 +89,7 @@ def task_plot_correlation_perf_time() -> None:
     data = pd.concat((time, performance), axis="columns")
 
     data = (
-        data.loc[:, [item_x, item_y]]
+        data.loc[:, [ITEM_X, ITEM_Y]]
         .reset_index()
         .sort_values(by="Subject")
         .set_index("Subject")
@@ -103,24 +111,11 @@ def task_plot_correlation_perf_time() -> None:
         f"Rho={f'{rho:.2f}'},  P={f'{p:.4f}'};"
         f" r = {r_lin:.2f}, P={p_lin:.4f}"
     )
-    # jp = sns.jointplot(
-    #     x=x,
-    #     y=y,
-    #     data=data_xy,
-    #     kind="reg",
-    #     height=1.5,
-    #     ratio=6,
-    #     color="black",
-    #     scatter_kws=dict(s=6),
-    # )
     fig, ax = plt.subplots(1, 1, figsize=(1.5, 1.5))
     ax = sns.regplot(
         x=x,
         y=y,
         data=data_xy,
-        # kind="reg",
-        # height=1.5,
-        # ratio=6,
         color="black",
         scatter_kws={"s": 6},
     )
@@ -140,14 +135,8 @@ def task_plot_correlation_perf_time() -> None:
     ax.set_yticks([Y_LIMS[0], 0, Y_LIMS[1]])
     ax.spines["left"].set_position(("outward", 3))
     ax.spines["bottom"].set_position(("outward", 3))
-    # jp.ax_joint.set_ylabel("\n".join(y.split(": ")))
-    # jp.ax_joint.spines["left"].set_position(("outward", 3))
-    # jp.ax_joint.spines["bottom"].set_position(("outward", 3))
-    # jp.fig.suptitle(title)
-    # jp.fig.subplots_adjust(top=0.80)
-    # jp.fig.tight_layout()
-    motor_intention.plotting_settings.save_fig(fig, PLOT_PATH / f"{BASENAME}.svg")
-    FNAME_STATS = PLOT_PATH / f"{BASENAME}_stats.txt"
+    motor_intention.plotting_settings.save_fig(fig, PLOT_PATH / f"{basename}.svg")
+    FNAME_STATS = PLOT_PATH / f"{basename}_stats.txt"
     # FNAME_STATS.unlink(missing_ok=True)
     FNAME_STATS.write_text(title, encoding="utf-8")
 

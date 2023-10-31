@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import csv
 from enum import Enum
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pte_decode
-import pytask
 import scipy.stats
 from matplotlib import pyplot as plt
 
@@ -19,11 +19,16 @@ DECODE = "decode"
 PLOT_PATH = constants.PLOTS / "supplements" / DECODE
 PLOT_PATH.mkdir(parents=True, exist_ok=True)
 
-ACCURACIES = constants.RESULTS / DECODE / "stim_off" / "ecog" / "accuracies.csv"
-BASENAME = "accuracies_boxplot_ecog_medoffvson"
-SUBJECT_PICKS = ("paired",)  #  "all")
-FNAMES_PLOT = [PLOT_PATH / f"{BASENAME}_{picks}.svg" for picks in SUBJECT_PICKS]
-FNAMES_STATS = [PLOT_PATH / f"{BASENAME}_{picks}_stats.csv" for picks in SUBJECT_PICKS]
+CHANNEL = "ecog"
+STIM = "Off"
+IN_PATH = (
+    constants.RESULTS / DECODE / f"stim_{STIM.lower()}" / CHANNEL / "accuracies.csv"
+)
+
+BASENAME = f"accuracies_boxplot_{CHANNEL}_stimoffvson"
+SUBJECT_PICKS = ("paired",)
+FNAMES_PLOT = (PLOT_PATH / f"{BASENAME}_{pick}.svg" for pick in SUBJECT_PICKS)
+FNAMES_STATS = (PLOT_PATH / f"{BASENAME}_{pick}_stats.csv" for pick in SUBJECT_PICKS)
 
 
 class Cond(Enum):
@@ -31,9 +36,7 @@ class Cond(Enum):
     ON = "ON"
 
 
-@pytask.mark.depends_on(ACCURACIES)
-@pytask.mark.produces(*FNAMES_PLOT, *FNAMES_STATS)
-def task_plot_accuracies_medoffvson() -> None:
+def task_plot_accuracies_medoffvson(in_path: Path = IN_PATH) -> None:
     """Main function of this script"""
     motor_intention.plotting_settings.activate()
     motor_intention.plotting_settings.medoffvson()
@@ -44,7 +47,7 @@ def task_plot_accuracies_medoffvson() -> None:
     y = "Balanced Accuracy"
     data_raw = (
         pd.read_csv(
-            ACCURACIES,
+            in_path,
             dtype={"Subject": str},
         )
         .rename(

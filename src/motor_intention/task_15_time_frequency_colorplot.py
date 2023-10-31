@@ -1,6 +1,8 @@
 """Perform and save time frequency analysis of given files."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pte
@@ -24,7 +26,7 @@ TMAX: int | float = 2.0
 VALS_CBAR = {"ecog": 3.0, "dbs": 1.0}
 
 
-def task_plot_time_frequency(show_plots: bool = False) -> None:
+def task_plot_time_frequency(in_path: Path = IN_ROOT, show_plots: bool = False) -> None:
     """Main function of this script."""
     motor_intention.plotting_settings.activate()
 
@@ -37,9 +39,9 @@ def task_plot_time_frequency(show_plots: bool = False) -> None:
         .rename(columns={"name": "Channel"})
         .set_index("Subject")
     )
-    file_finder = pte.filetools.get_filefinder(datatype="any")
+    file_finder = pte.filetools.DefaultFinder()
     file_finder.find_files(
-        directory=IN_ROOT, exclude="sub-EL002", extensions=["tfr.h5"]
+        directory=in_path, exclude="sub-EL002", extensions=["tfr.h5"]
     )
     print(file_finder)
     powers = {}
@@ -60,8 +62,8 @@ def task_plot_time_frequency(show_plots: bool = False) -> None:
             ch_pick = coords.loc[sub, "Channel"] if channel == "ecog" else "dbs"
             power_pick = power.copy().pick(ch_pick)
             power_norm.append(power_pick.data.mean(axis=0))
-        power_norm = np.stack(power_norm)
-        power_av = power_norm.mean(axis=0)
+        power_norm_all = np.stack(power_norm)
+        power_av = power_norm_all.mean(axis=0)
 
         borderval_cbar = VALS_CBAR[channel]
 
@@ -77,7 +79,6 @@ def task_plot_time_frequency(show_plots: bool = False) -> None:
         )
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-        # ax.set_xlabel("Time [s]")
         ax.set_xlim([TMIN, TMAX])
         ax.set_xticks([TMIN, 0, TMAX])
         ax.set_xticklabels([])
@@ -87,7 +88,6 @@ def task_plot_time_frequency(show_plots: bool = False) -> None:
             ax.set_ylabel("Frequency [Hz]")
         else:
             ax.set_yticklabels([])
-        # ax.axvline(x=0.0, color="white", linestyle="--", alpha=0.5)
 
         motor_intention.plotting_settings.save_fig(
             fig, PLOT_ROOT / (f"{BASENAME}_{ch_str}.svg")
@@ -104,7 +104,6 @@ def task_plot_time_frequency(show_plots: bool = False) -> None:
         motor_intention.plotting_settings.save_fig(
             fig, PLOT_ROOT / (f"{BASENAME}_cbar_{ch_str}.svg")
         )
-        # plt.show(block=True)
 
     if show_plots:
         plt.show(block=True)
