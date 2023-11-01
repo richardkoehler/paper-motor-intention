@@ -6,19 +6,15 @@ from pathlib import Path
 
 import numpy as np
 
-random_seed = 1
-np.random.seed(random_seed)  # noqa: NPY002
-random.seed(random_seed)
+RANDOM_SEED = 1
+np.random.seed(RANDOM_SEED)  # noqa: NPY002
+random.seed(RANDOM_SEED)
 
 
 SRC = Path(__file__).parent.resolve()
 DATA = SRC.joinpath("..", "..", "data").resolve()
-PROJECT_ROOT = Path(
-    r"C:\Users\rkoehler\OneDrive - Charité - Universitätsmedizin Berlin"
-    r"\PROJECT Motor Onset Prediction\Analysis"
-)
-RAWDATA = PROJECT_ROOT / "00_rawdata_mot_onset_pred_downsample"
-RAWDATA_ORIG = PROJECT_ROOT / "00_rawdata_mot_onset_pred"
+RAWDATA = DATA / "00_rawdata_mot_onset_pred_downsample"
+RAWDATA_ORIG = DATA / "00_rawdata_mot_onset_pred"
 DERIVATIVES = DATA / "01_derivatives"
 RESULTS = DATA / "02_results"
 PLOTS = DATA / "03_plots"
@@ -56,17 +52,6 @@ STIM_PAIRED = {
     "sub-EL017": "OFF",
 }
 STIM_PAIRED_SUBS = [sub.strip("sub-") for sub in STIM_PAIRED]
-INTERPOLATED_RUNS = [
-    "sub-EL002_ses-EphysMedOff01_task-SelfpacedRotationR_acq-StimOff_run-01_ieeg",
-    "sub-EL002_ses-EphysMedOff02_task-SelfpacedRotationR_acq-StimOff_run-01_ieeg",
-    "sub-EL003_ses-EphysMedOff01_task-SelfpacedRotationR_acq-StimOff_run-01_ieeg",
-    "sub-EL003_ses-EphysMedOn03_task-SelfpacedRotationR_acq-StimOff_run-01_ieeg",
-    "sub-EL005_ses-EphysMedOff01_task-SelfpacedRotationL_acq-StimOff_run-01_ieeg",
-    "sub-EL005_ses-EphysMedOff02_task-SelfpacedRotationL_acq-StimOn_run-01_ieeg",
-    "sub-EL005_ses-EphysMedOn01_task-SelfpacedRotationL_acq-StimOff_run-01_ieeg",
-    "sub-FOG011_ses-EphysMedOff01_task-ButtonPressL_acq-StimOff_run-01_ieeg",
-    "sub-FOGC001_ses-EphysMedOff01_task-ButtonPressL_acq-StimOff_run-01_ieeg",
-]
 ECOG_HEMISPHERES = {
     "EL002": "L",
     "EL003": "L",
