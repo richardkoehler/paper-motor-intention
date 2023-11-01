@@ -6,9 +6,11 @@ from pathlib import Path
 
 import numpy as np
 
-RANDOM_SEED = 1
-np.random.seed(RANDOM_SEED)  # noqa: NPY002
-random.seed(RANDOM_SEED)
+
+def set_random_seed() -> None:
+    random_seed = 1
+    np.random.seed(random_seed)  # noqa: NPY002
+    random.seed(random_seed)
 
 
 SRC = Path(__file__).parent.resolve()

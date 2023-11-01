@@ -1,9 +1,9 @@
 """Calculate and save earliest decoding times."""
 from __future__ import annotations
 
-from collections.abc import Sequence
 import pathlib
 import time
+from collections.abc import Sequence
 from typing import Annotated, Literal
 
 import numpy as np
@@ -13,7 +13,6 @@ from joblib import Parallel, delayed
 from pytask import Product
 
 import motor_intention.project_constants as constants
-
 
 CHANNELS = ("ecog", "dbs")
 
@@ -35,11 +34,7 @@ INPATHS_STIM_ON = {
     for ch in CHANNELS
 }
 OUTPATHS_STIM_ON = {
-    (ch, "stim_on"): constants.RESULTS
-    / "decode"
-    / "stim_on"
-    / ch
-    / "decodingtimes.csv"
+    (ch, "stim_on"): constants.RESULTS / "decode" / "stim_on" / ch / "decodingtimes.csv"
     for ch in CHANNELS
 }
 INPATHS_SINGLE_STIM_OFF = {
@@ -81,16 +76,15 @@ def task_decoding_times_stimoff(
     ] = INPATHS_STIM_OFF,
     out_paths: Sequence[Annotated[pathlib.Path, Product]] = OUTPATHS_STIM_OFF,
 ) -> None:
-    calculate_decoding_times(
-        stimulation="Off", in_paths=in_paths, out_paths=out_paths
-    )
+    calculate_decoding_times(stimulation="Off", in_paths=in_paths, out_paths=out_paths)
 
 
 def task_decoding_times_stimon(
     in_paths: dict[
         tuple[Literal["ecog", "dbs"], Literal["stim_on", "stim_off"]],
         Sequence[pathlib.Path],
-    ] = None,
+    ]
+    | None = None,
     out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
     calculate_decoding_times(stimulation="On")
@@ -100,9 +94,9 @@ def task_decoding_times_single_ch(
     in_paths: dict[
         tuple[Literal["ecog", "dbs"], Literal["stim_on", "stim_off"]],
         Sequence[pathlib.Path],
-    ] = None,
-    out_paths: dict[str, Literal["ecog", "dbs"][pathlib.Path, Product]]
+    ]
     | None = None,
+    out_paths: dict[str, Literal["ecog", "dbs"][pathlib.Path, Product]] | None = None,
 ) -> None:
     calculate_decoding_times(stimulation="Off", channels_used="single")
 
@@ -111,7 +105,8 @@ def task_decoding_times_single_ch_stimon(
     in_paths: dict[
         tuple[Literal["ecog", "dbs"], Literal["stim_on", "stim_off"]],
         Sequence[pathlib.Path],
-    ] = None,
+    ]
+    | None = None,
     out_paths: dict[str, Annotated[pathlib.Path, Product]] | None = None,
 ) -> None:
     calculate_decoding_times(stimulation="On", channels_used="single")
@@ -163,7 +158,7 @@ def calculate_decoding_times(
 
     file_finder = pte.filetools.DefaultFinder()
     start = time.time()
-    for () in channel_types:
+    for channel in channel_types:
         INPUT_PATH = constants.DERIVATIVES / "decode" / PIPELINE / channel
         OUTPUT_PATH = constants.RESULTS / "decode" / PIPELINE / channel
         OUTPUT_PATH.mkdir(exist_ok=True, parents=True)

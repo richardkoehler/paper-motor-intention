@@ -75,7 +75,9 @@ def task_compute_rp_ecog(
         )
 
         # Initialize filefinder instance
-        file_finder = pte.filetools.BIDSFinder(hemispheres=constants.ECOG_HEMISPHERES)
+        file_finder = pte.filetools.BIDSFinder(
+            hemispheres=constants.ECOG_HEMISPHERES
+        )
         file_finder.find_files(
             directory=constants.RAWDATA_ORIG,
             extensions=[".vhdr"],
@@ -89,7 +91,9 @@ def task_compute_rp_ecog(
         times = None
         for bids_path in file_finder.files:
             basename = bids_path.basename.removesuffix("_ieeg.vhdr")
-            file_channels = NM_CHANNELS_DIR / f"{basename}_ieeg_nm_channels.csv"
+            file_channels = (
+                NM_CHANNELS_DIR / f"{basename}_ieeg_nm_channels.csv"
+            )
             if not file_channels.is_file():
                 continue
             print(f"\nFILE: {basename}")
@@ -98,7 +102,10 @@ def task_compute_rp_ecog(
             raw = mne_bids.read_raw_bids(
                 bids_path, verbose=False, extra_params={"preload": True}
             )
-            if "ButtonPress" in basename and "LFP_L_01D_STN_PI" not in raw.ch_names:
+            if (
+                "ButtonPress" in basename
+                and "LFP_L_01D_STN_PI" not in raw.ch_names
+            ):
                 print("\nREREFERENCING:", basename)
                 raw.set_eeg_reference(["LFP_L_01_STN_PI"], ch_type="ecog")
             raw = pte.preprocessing.preprocess(
@@ -140,9 +147,11 @@ def task_compute_rp_ecog(
                 epochs = epochs.drop(indices=bad_indices)
 
             reject_criteria = {"ecog": 1e-3}  # 1 mV
-            epochs.load_data().drop_bad(reject=reject_criteria)  # type: ignore
+            epochs.load_data().drop_bad(reject=reject_criteria)
             evoked_all: mne.Evoked = (
-                epochs.copy().crop(tmin=-3, tmax=2).average(by_event_type=False)
+                epochs.copy()
+                .crop(tmin=-3, tmax=2)
+                .average(by_event_type=False)
             )
             if times is None:
                 times = evoked_all.times
@@ -156,7 +165,8 @@ def task_compute_rp_ecog(
             )
             evoked_motorcortex = evoked_all.copy().pick(PICKS)
             evoked_motorcortex.save(
-                OUT_DIR_SINGLE_SUBS / f"{basename}_proc-motorcortex-ave.fif.gz",  # type: ignore
+                OUT_DIR_SINGLE_SUBS
+                / f"{basename}_proc-motorcortex-ave.fif.gz",
                 overwrite=True,
             )
             epochs_motorcortex = epochs.copy().pick(PICKS)
@@ -190,7 +200,9 @@ def task_compute_rp_ecog(
             fig: figure.Figure = evoked_motorcortex.plot(show=False)
             fig.suptitle(basename.replace("_", " "))
             fig.tight_layout()
-            fig.savefig(PLOT_DIR_SINGLE_SUBS / f"{basename}_proc-motorcortex.png")
+            fig.savefig(
+                PLOT_DIR_SINGLE_SUBS / f"{basename}_proc-motorcortex.png"
+            )
             if show_plots:
                 plt.show(block=True)
             else:

@@ -7,23 +7,11 @@ from enum import Enum
 
 import cycler
 import matplotlib as mpl
+import mne
 import numpy as np
 import seaborn as sns
 from matplotlib import figure
 from matplotlib import pyplot as plt
-
-# palette_colorblind_custom = (
-#     (0.00392156862745098, 0.45098039215686275, 0.6980392156862745),
-#     (0.00784313725490196, 0.6196078431372549, 0.45098039215686275),
-#     (0.8705882352941177, 0.5607843137254902, 0.0196078431372549),
-#     (0.8, 0.47058823529411764, 0.7372549019607844),
-#     (0.8352941176470589, 0.3686274509803922, 0.0),
-#     (0.984313725490196, 0.6862745098039216, 0.8941176470588236),
-#     (0.792156862745098, 0.5686274509803921, 0.3803921568627451),
-#     (0.5803921568627451, 0.5803921568627451, 0.5803921568627451),
-#     (0.9254901960784314, 0.8823529411764706, 0.2),
-#     (0.33725490196078434, 0.7058823529411765, 0.9137254901960784),
-# )
 
 PALETTE_WJN_2022 = np.array(
     (
@@ -57,6 +45,15 @@ class Color(Enum):
         213 / 255,
         203 / 255,
     )  # medium/light grey - Motor Cortex
+
+
+def set_mne_backends() -> None:
+    if mne.viz.get_3d_backend() != "pyvistaqt":
+        # mne.viz.set_3d_backend("pyvistaqt")
+        mne.viz.set_3d_backend("notebook")
+    if mne.viz.get_browser_backend() != "qt":
+        mne.viz.set_browser_backend("qt")
+        mne.set_config("MNE_BROWSER_BACKEND", "qt")
 
 
 def activate() -> None:

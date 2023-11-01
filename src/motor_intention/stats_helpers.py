@@ -10,9 +10,7 @@ from statannotations.stats.StatTest import StatTest
 def wilcoxon() -> StatTest:
     """Wrapper for StatTest with scipy Wilcoxon signed-rank test."""
 
-    def _stat_test(
-        x: pd.Series | np.ndarray, y: pd.Series | np.ndarray
-    ):  # type: ignore
+    def _stat_test(x: pd.Series | np.ndarray, y: pd.Series | np.ndarray):
         diff = x - y
         return scipy.stats.wilcoxon(
             diff,

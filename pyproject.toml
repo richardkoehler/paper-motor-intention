@@ -21,6 +21,7 @@ classifiers = [
 ]
 dependencies = [
   "mne>=1.0",
+  "mne-qt-browser",
   "psutil",
   "pte",
   "pte-decode",
