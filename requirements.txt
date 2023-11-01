@@ -1,8 +1,6 @@
--e mne@https://github.com/richardkoehler/mne-python
+mne-qt-browser
 -e py_neuromodulation@git+https://github.com/richardkoehler/py_neuromodulation/tree/paper_motor_intenion
 -e pte-decode@https://github.com/richardkoehler/pte-decode
 -e pte-stats@https://github.com/richardkoehler/pte-stats
 -e pte@https://github.com/richardkoehler/pte
 -e .
-pluggy>=1.3
-pytask
