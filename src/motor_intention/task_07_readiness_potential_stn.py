@@ -17,7 +17,10 @@ import motor_intention.project_constants as constants
 
 STIM = ("Off", "On")
 OUT_DIRS = {
-    stim: constants.DERIVATIVES / "readiness_potential" / f"stim_{stim.lower()}" / "dbs"
+    stim: constants.DERIVATIVES
+    / "readiness_potential"
+    / f"stim_{stim.lower()}"
+    / "dbs"
     for stim in STIM
 }
 
@@ -45,7 +48,9 @@ def task_compute_rp_stn(
         PLOT_DIR_SINGLE_SUBS.mkdir(parents=True, exist_ok=True)
 
         NM_CHANNELS_DIR = (
-            constants.DATA / "nm_channels" / f"unip_{PIPELINE}"  # f"bip_{PIPELINE}"
+            constants.DATA
+            / "nm_channels"
+            / f"unip_{PIPELINE}"  # f"bip_{PIPELINE}"
         )  #
 
         BAD_EPOCHS_DIR = constants.DATA / "bad_epochs"
@@ -61,7 +66,9 @@ def task_compute_rp_stn(
         BASELINE = (-3, -2)
 
         # Initialize filefinder instance
-        file_finder = pte.filetools.BIDSFinder(hemispheres=constants.ECOG_HEMISPHERES)
+        file_finder = pte.filetools.BIDSFinder(
+            hemispheres=constants.ECOG_HEMISPHERES
+        )
         file_finder.find_files(
             directory=constants.RAWDATA_ORIG,
             extensions=[".vhdr"],
@@ -75,7 +82,9 @@ def task_compute_rp_stn(
         times = None
         for bids_path in file_finder.files:
             basename = bids_path.basename.removesuffix("_ieeg.vhdr")
-            file_channels = NM_CHANNELS_DIR / f"{basename}_ieeg_nm_channels.csv"
+            file_channels = (
+                NM_CHANNELS_DIR / f"{basename}_ieeg_nm_channels.csv"
+            )
             if not file_channels.is_file():
                 continue
             print(f"\nFILE: {basename}")
@@ -93,7 +102,9 @@ def task_compute_rp_stn(
             if not ref_orig.startswith(f"LFP_{side}_01") and sub != "EL002":
                 ref_kw = f"LFP_{side}_01"
                 ref_ch = [
-                    ch for ch in raw.ch_names if ch.startswith(ref_kw) and "STN" in ch
+                    ch
+                    for ch in raw.ch_names
+                    if ch.startswith(ref_kw) and "STN" in ch
                 ]
                 assert len(ref_ch) == 1
                 raw.set_eeg_reference(ref_ch, ch_type="dbs")
@@ -114,11 +125,9 @@ def task_compute_rp_stn(
             if stimulation == "On":
                 if sub == "EL008":
                     raw.drop_channels(
-                        # ['LFP_L_(01+02+03)-(14+15)_STN_BS', 'LFP_L_(04+05+06)-(11+12)_STN_BS']
                         ["LFP_L_(01+02+03)_STN_BS", "LFP_L_(04+05+06)_STN_BS"]
                     )
                 elif sub == "EL005":
-                    # raw.drop_channels(['LFP_R_(02+03+04)-08_STN_MT', 'LFP_R_01-(02+03+04)_STN_MT']) #
                     raw.drop_channels(["LFP_R_(02+03+04)_STN_MT"])
             epochs = pte.time_frequency.epochs_from_raw(
                 raw=raw,
@@ -130,6 +139,8 @@ def task_compute_rp_stn(
                 min_distance_trials=3.0,
                 picks="dbs",
             )
+            epochs.plot(n_epochs=1, block=True, scalings="auto")
+            continue
             del raw
 
             bad_epochs_df = pte.filetools.get_bad_epochs(
