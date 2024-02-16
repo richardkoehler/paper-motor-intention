@@ -25,7 +25,7 @@ dependencies = [
   "psutil",
   "pte",
   "pte-decode",
-  "pte-stats",
+  "pte-stats==0.3.0",
   "py_neuromodulation",
   "pyqt5",
   "pyvistaqt",

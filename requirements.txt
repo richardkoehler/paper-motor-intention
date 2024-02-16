@@ -1,5 +1,4 @@
 -e py_neuromodulation@git+https://github.com/richardkoehler/py_neuromodulation/tree/paper_motor_intenion
--e pte-decode@https://github.com/richardkoehler/pte-decode
--e pte-stats@https://github.com/richardkoehler/pte-stats
--e pte@https://github.com/richardkoehler/pte
+-e pte-decode@git+https://github.com/richardkoehler/pte-decode
+-e pte@git+https://github.com/richardkoehler/pte
 -e .
