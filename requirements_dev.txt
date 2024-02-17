@@ -1,4 +1,0 @@
-black
-mypy
-pre-commit
-ruff
