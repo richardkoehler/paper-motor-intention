@@ -91,7 +91,7 @@ op=p;
 
 original_m=[];m=[];
 for a = 1:10000
-    if a==1 
+    if a==1
         cc_p=bwconncomp(p<.05);
     else
         p(:) = p(randperm(length(p(:))));
@@ -103,7 +103,7 @@ for a = 1:10000
             rsum(b) = sum(1-p(idx{b}));
         end
         [m,i]=nanmax(rsum);
-        
+
         if a == 1
             original_m = m;
             sigpixel=idx(i);

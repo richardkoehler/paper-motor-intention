@@ -39,7 +39,7 @@ description = "Code used for investigation of motor intention in Parkinson's dis
 dynamic = ["version"]
 name = "motor-intention"
 readme = "README.md"
-requires-python = ">=3.10.9,<3.10.10"
+requires-python = "==3.10.*"
 
 [project.optional-dependencies]
 dev = [
@@ -61,6 +61,15 @@ Homepage = "https://github.com/richardkoehler/paper-motor-intention"
 
 [tool.hatch]
 version.path = "src/motor_intention/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src/motor_intention",
+  "/tests",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/motor_intention"]
 
 [tool.pytest.ini_options]
 addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
@@ -109,4 +118,3 @@ isort.required-imports = ["from __future__ import annotations"]
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
 "tests/**" = ["T20"]
-
