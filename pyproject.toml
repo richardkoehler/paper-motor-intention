@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling"]
 
 [project]
 authors = [
@@ -25,7 +25,7 @@ dependencies = [
   "psutil",
   "pte",
   "pte-decode",
-  "pte-stats",
+  "pte-stats==0.3.0",
   "py_neuromodulation",
   "pyqt5",
   "pyvistaqt",
@@ -39,23 +39,18 @@ description = "Code used for investigation of motor intention in Parkinson's dis
 dynamic = ["version"]
 name = "motor-intention"
 readme = "README.md"
-requires-python = "~=3.10"
+requires-python = ">=3.10.9,<3.10.10"
 
 [project.optional-dependencies]
 dev = [
-  "pytest >=6",
-  "pytest-cov >=3",
-]
-docs = [
-  "sphinx>=7.0",
-  "myst_parser>=0.13",
-  "sphinx_copybutton",
-  "sphinx_autodoc_typehints",
-  "furo>=2023.08.17",
-]
-test = [
-  "pytest >=6",
-  "pytest-cov >=3",
+  "black",
+  "mypy",
+  "packaging",
+  "pandas-stubs",
+  "pre-commit",
+  "pytest",
+  "pytest-cov",
+  "ruff",
 ]
 
 [project.urls]
@@ -65,12 +60,7 @@ Discussions = "https://github.com/richardkoehler/paper-motor-intention/discussio
 Homepage = "https://github.com/richardkoehler/paper-motor-intention"
 
 [tool.hatch]
-build.hooks.vcs.version-file = "src/motor_intention/_version.py"
-envs.default.dependencies = [
-  "pytest",
-  "pytest-cov",
-]
-version.source = "vcs"
+version.path = "src/motor_intention/__init__.py"
 
 [tool.pytest.ini_options]
 addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
@@ -84,77 +74,39 @@ testpaths = [
 ]
 xfail_strict = true
 
-[tool.coverage]
-port.exclude_lines = [
-  'pragma: no cover',
-  '\.\.\.',
-  'if typing.TYPE_CHECKING:',
-]
-run.source = ["motor_intention"]
-
 [tool.mypy]
-disallow_incomplete_defs = false
-disallow_untyped_defs = false
-enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 files = ["src", "tests"]
-ignore_missing_imports = true
-python_version = "3.10"
-show_error_codes = true
-strict = true
-warn_unreachable = true
-warn_unused_configs = true
 
 [[tool.mypy.overrides]]
-disallow_incomplete_defs = true
-disallow_untyped_defs = true
+ignore_missing_imports = true
 module = "motor_intention.*"
 
+[tool.black]
+line-length = 79
+extend-exclude = ["matlab", "granger_causality"]
+
 [tool.ruff]
-src = ["src"]
+line-length = 79
+extend-exclude = ["matlab", "granger_causality"]
 
 [tool.ruff.lint]
-extend-select = [
-  "B", # flake8-bugbear
-  "I", # isort
-  "ARG", # flake8-unused-arguments
-  "C4", # flake8-comprehensions
-  "EM", # flake8-errmsg
-  "ICN", # flake8-import-conventions
-  "G", # flake8-logging-format
-  "PGH", # pygrep-hooks
-  "PIE", # flake8-pie
-  "PL", # pylint
-  "PT", # flake8-pytest-style
-  "PTH", # flake8-use-pathlib
-  "RET", # flake8-return
-  "RUF", # Ruff-specific
-  "SIM", # flake8-simplify
-  "T20", # flake8-print
-  "UP", # pyupgrade
-  "YTT", # flake8-2020
-  "EXE", # flake8-executable
-  "NPY", # NumPy specific rules
-  "PD", # pandas-vet
-]
-ignore = [
-  "PLR", # Design related pylint codes
-  "T201", # print() function
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
 ]
 isort.required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.per-file-ignores]
-"noxfile.py" = ["T20"]
+"__init__.py" = ["F401", "F403"]
 "tests/**" = ["T20"]
 
-[tool.pylint]
-ignore-paths = [".*/_version.py"]
-messages_control.disable = [
-  "design",
-  "fixme",
-  "line-too-long",
-  "missing-module-docstring",
-  "wrong-import-position",
-]
-py-version = "3.10"
-reports.output-format = "colorized"
-similarities.ignore-imports = "yes"
