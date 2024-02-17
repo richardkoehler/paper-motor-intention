@@ -18,7 +18,6 @@ from matplotlib import pyplot as plt
 import motor_intention.plotting_settings
 import motor_intention.project_constants as constants
 
-
 CHANNEL = "ecog"
 TIMES = (
     constants.RESULTS

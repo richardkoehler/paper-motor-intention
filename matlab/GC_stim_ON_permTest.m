@@ -92,13 +92,13 @@ op=p;
 
 original_m=[];m=[];
 for a = 1:10000
-    if a==1 
+    if a==1
         cc_p=bwconncomp(p<.05);
     else
         p(:) = p(randperm(length(p(:))));
         cc_p=bwconncomp(p<.05);
     end
-    
+
         idx = cc_p.PixelIdxList;
     rsum = [];
         for b = 1:length(idx)
@@ -109,7 +109,7 @@ for a = 1:10000
             end
         end
         [m,i]=nanmax(rsum);
-        
+
         if a == 1
             original_m = m;
             sigpixel=idx(i);
@@ -182,4 +182,3 @@ mypower(f,squeeze(son_mat(:,:,y(1)))',color_ON);
 legend('OFF','ON')
 title({'Granger causality at peak difference';'(-0.9 s)'})
 myprint('20231031_GC-peak_OFF_ON_no_sub002')
-
