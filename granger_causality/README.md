@@ -8,7 +8,7 @@ Parkinson’s disease. DOI:
 Relies on a modified version of the MNE-Connectivity package, available here:
 [github.com/neuromodulation/mne-connectivity_tsbinns](https://github.com/neuromodulation/mne-connectivity_tsbinns)
 or here:
-https://github.com/richardkoehler/mne-connectivity_tsbinns/tree/paper-motor-intention
+https://github.com/richardkoehler/mne-connectivity/tree/paper-motor-intention
 
 ### Use
 
